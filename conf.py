@@ -3,12 +3,11 @@ import os
 ###
 ###     Directory
 ###
-LOCAL_WORK_DIR  = '/Users/d-fr-mac0002/Desktop/dialog/perf'#os.path.dirname(os.path.realpath("__file__"))
+LOCAL_WORK_DIR  = '/home/tristan/workspace/perf'      #os.path.dirname(os.path.realpath("__file__"))
 LOCAL_DATA_DIR  = os.path.join(LOCAL_WORK_DIR, 'data')
 NAO_HOME        = "/home/nao"
-NAO_WORK_DIR    = "/home/nao/bench_dialog"
+NAO_WORK_DIR    = os.path.join(NAO_HOME, 'bench_dialog')
 NAO_DATA_DIR    = os.path.join(NAO_HOME, 'bench_data')
-BENCH_DIR       = '/home/nao/bench_dialog'
 CSV_SEP         = ','
 
 ###
@@ -24,24 +23,14 @@ PROC_MEM_DATA   = ["VmSize","VmPeak","VmStk","VmRSS", "Threads"]
 ###
 ###     Net communication
 ###
-IP_1            = "10.0.206.47"
-IP_2            = "10.0.128.144"
+IP_1            = "192.168.0.15"
+IP_2            = "127.0.0.1"
 SOC_ADR_REMOTE  = IP_1
 SOC_ADR_LOC     = IP_2
-REMOTE_IP_DEF   = IP_1
 SOC_PORT_CTRL   = 6007
 SOC_PORT_DATA   = 6006
-MESSAGES        = ["start", "stop"]
-LOGIN           = 'nao'
-PWD             = 'nao'
-
-###
-###     CIP var
-###
-CIP_ADDR        = 'localhost'
-CIP_PORT        = 6000
-CIP_AUTH        = 'nao'
-CIP_MSG         = 'stop'
+LOGIN           = 'tristan'
+PWD             = 'Spaghett1'
 
 ###
 ###     Verbosity
