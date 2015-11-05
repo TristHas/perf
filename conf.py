@@ -13,7 +13,7 @@ CSV_SEP         = ','
 ###
 ###     System Watch var
 ###
-SYS_MEM_DATA    = ["MemFree","Buffers","Cached","MemAvailable"]
+SYS_MEM_DATA    = ["MemFree","Buffers","Cached"]#,"MemAvailable"]
 SYS_CPU_DATA    = ["usr_time","nice_time","sys_time","io_time","irq_time","softirq_time","idle_time"]
 SYS_CPU_OTHER   = ["time", 'load']
 LOAD_AVG        = ["lavg_1","lavg_5","lavg_15"]
@@ -35,8 +35,14 @@ PWD             = 'Spaghett1'
 ###
 ###     Verbosity
 ###
-V_INFO          = 1
-V_DEBUG         = 2
+V_WARN          = 4
+V_INFO          = 2
+V_DEBUG         = 3
+DATA_LOG_FILE   = os.path.join(NAO_DATA_DIR, 'data.log')
+SERV_LOG_FILE   = os.path.join(NAO_DATA_DIR, 'server.log')
+CPU_LOG_FILE    = os.path.join(NAO_DATA_DIR, 'cpu.log')
+CLIENT_LOG_FILE = os.path.join(LOCAL_DATA_DIR, 'cpu.log')
+
 
 ###
 ###     Test Purposes

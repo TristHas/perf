@@ -1,7 +1,7 @@
 import numpy as np
 import time
 import matplotlib
-#matplotlib.use('GTKAgg')
+matplotlib.use('GTKAgg')
 from matplotlib import pyplot as plt
 
 
@@ -19,15 +19,15 @@ def print_dic(dico, ax, fig):
     ind = 0
     for raw in ax:
         for column in raw:
-            #print '[PRINT THREAD] plot {}'.format(dico[keys[ind]])
+            print '[PRINT THREAD] plot {}'.format(dico[keys[ind]])
             column.plot(dico[keys[ind]])
             column.set_title(keys[ind])
             ind += 1
             if ind >= len(keys):
                 break
-    #print '[PRINT THREAD] Before drawing'
+    print '[PRINT THREAD] Before drawing'
     fig.canvas.draw()
-    #print '[PRINT THREAD] has drawn'
+    print '[PRINT THREAD] has drawn'
 
 
 def randomwalk(dims=(256, 256), n=20, sigma=5, alpha=0.95, seed=1):

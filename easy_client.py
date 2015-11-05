@@ -2,19 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from conf import *
+from helpers import Logger, send_data
 from printer import print_dic, init_print
 import socket, threading, Queue, json
 import time, sys
-
-def send_command(soc, mess):
-    soc.sendall(mess)
-    while True:
-        data = soc.recv(8)
-        if data == 'sync':
-            break
-        if data == 'fail':
-            break
-    return data
 
 def recv_data(soc):
     data = soc.recv(4096)
@@ -40,7 +31,10 @@ def treat_data(data, base_data):
             base_data[keys][elem].append(dico[keys][elem])
 
 class LightClient(object):
-    def __init__(self, ip = None):
+    def __init__(self, adict, ip = None):
+        if not os.path.isdir(LOCAL_DATA_DIR):
+            os.makedirs(LOCAL_DATA_DIR)
+        self.log = Logger(CLIENT_LOG_FILE, adict['v'])
         self.soc_ctrl = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.soc_ctrl.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.soc_ctrl.bind((IP_2, SOC_PORT_CTRL))
@@ -53,10 +47,10 @@ class LightClient(object):
         return self
 
     def start_record(self):
-        send_command(self.soc_ctrl,START_RECORD)
+        send_data(self.soc_ctrl,START_RECORD)
 
     def stop_record(self):
-        send_command(self.soc_ctrl,STOP_RECORD)
+        send_data(self.soc_ctrl,STOP_RECORD)
 
     def start_receive(self):
         self.receiving = True
@@ -65,13 +59,13 @@ class LightClient(object):
 
     def stop_receive(self):
         self.receiving = False
-        send_command(self.soc_ctrl, STOP_SEND)
+        send_data(self.soc_ctrl, STOP_SEND)
 
     def start_storage(self):
-        send_command(self.soc_ctrl, START_STORE)
+        send_data(self.soc_ctrl, START_STORE)
 
     def stop_storage(self):
-        send_command(self.soc_ctrl, STOP_STORE)
+        send_data(self.soc_ctrl, STOP_STORE)
 
     def start_print(self):
         while not self.headers:
@@ -108,11 +102,11 @@ class LightClient(object):
         self.stop_storage()
         self.stop_print()
         self.stop_receive()
-        send_command(self.soc_ctrl, STOP_ALL)
+        send_data(self.soc_ctrl, STOP_ALL)
         self.soc_data.close()
 
     def receive(self):
-        send_command(self.soc_ctrl,START_SEND)
+        send_data(self.soc_ctrl,START_SEND)
         self.soc_data = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.soc_data.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.soc_data.bind((IP_2, SOC_PORT_DATA))
@@ -148,28 +142,46 @@ class LightClient(object):
         print 'execute exit'
         self.soc_ctrl.close()
 
+def parserArguments(parser):
+    parser.add_argument('--proc' , dest = 'processes', nargs='*', default = [], help = 'processes to watch')
+    parser.add_argument('--tout' , dest = 'timeout', type = int, default = '10000' , help = 'timeout in seconds')
+    parser.add_argument('--step' , dest = 'step', type = int, default = '1' , help = 'period of recording in seconds')
+    parser.add_argument('--rec' , dest = 'rec', nargs='*', default = ['local', 'remote'] , help = 'record mode, can be local or remote')
+    parser.add_argument('--verbose', '-v' , dest = 'v', type = int, default = V_INFO , help = 'record mode, can be local or remote')
 
-accepted_commands = [
-    START_RECORD,
-    STOP_RECORD,
-    START_SEND,
-    STOP_SEND,
-    START_STORE,
-    STOP_STORE,
-    STOP_ALL,
-]
+remote_commands = {
+    'start record'  : START_RECORD,
+    'stop record'   : STOP_RECORD,
+    'start send'    : START_SEND,
+    'stop send'     : STOP_SEND,
+    'start store'   : START_STORE,
+    'stop store'    : STOP_STORE,
+    'stop'          : STOP_ALL,
+}
+
+local_commands = {
+    'start print'   :,
+    'stop print'    :,
+    'get data'      :,
+}
 
 if __name__ == '__main__':
-    with LightClient() as client:
+
+    parser = argparse.ArgumentParser(description = 'dialog_cpu_stats')
+    parserArguments(parser)
+    args = parser.parse_args()
+    adict = vars(args)
+
+    with LightClient(adict) as client:
         while True:
             line = raw_input()
             print '/' + line + '/'
-            if line in accepted_commands:
-                if line == '3':
+            if line in remote_commands:
+
                     client.start_receive()
                     client.start_print()
                 else:
-                    send_command(client.soc_ctrl, line)
+                    send_data(client.soc_ctrl, line)
                 print "sent {}".format(line)
             else:
                 print 'wrong command argument'
