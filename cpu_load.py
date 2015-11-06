@@ -61,7 +61,6 @@ class CPUWatcher(object):
         ## self.directory = os.path.join(NAO_DATA_DIR, time.ctime())
         ## os.makedirs(self.directory)
         self.keep_running=True
-        print 'start start'
 
     def stop(self):
         """
@@ -96,19 +95,25 @@ class CPUWatcher(object):
             self.is_transmitting = True
 
     def _end_record(self):
-            self.transmit.put('end')
-            self.is_transmitting = False
+        self.transmit.put('end')
+        self.is_transmitting = False
+        self.log.info('[CPU THREAD] Has sent end command. Exiting')
 
     def _record(self, tmp):
-            self.transmit.put(tmp)
+        self.transmit.put(tmp)
+        self.log.debug('[CPU Thread] Has put to queue {}'.format(tmp))
 
     def _launch_record(self, **adict):
+        self.log.debug('[CPU THREAD] In thread')
         count = 0                                                   # record loop var init
         step = self.step
         timeout = self.timeout
         self._init_record()
+        self.log.debug('[CPU THREAD] Has init')
         while self.run:                # Timeout + stop() message
+            self.log.debug('[CPU THREAD] in loop')
             if self.keep_running and count < timeout:
+                self.log.debug('[CPU THREAD] active state')
                 tmp = {}
                 tme = self._get_time()                                  # sys time is used for several measures
                 keys = self.proc.keys()
@@ -122,6 +127,7 @@ class CPUWatcher(object):
                 count += step
                 time.sleep(step)
             else:
+                self.log.debug('[CPU THREAD] idle state')
                 time.sleep(1)
         self._end_record()
         print 'end of thread record'

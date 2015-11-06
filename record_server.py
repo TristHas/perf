@@ -46,15 +46,13 @@ if __name__ == '__main__':
         log.debug(adict)
 
         targets = define_targets()
-        log.debug(targets['process'])
-        log.debug(type(targets['process']))
         headers = define_headers()
         data    = Queue.Queue()
 
         # Waits for a client connection
         soc_ctrl = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         soc_ctrl.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        soc_ctrl.bind((SOC_ADR_REMOTE, SOC_PORT_CTRL))
+        soc_ctrl.bind((IP_1, SOC_PORT_CTRL))
         soc_ctrl.listen(1)
 
         ###

@@ -3,7 +3,7 @@ import os
 ###
 ###     Directory
 ###
-LOCAL_WORK_DIR  = '/home/tristan/workspace/perf'      #os.path.dirname(os.path.realpath("__file__"))
+LOCAL_WORK_DIR  = '/Users/d-fr-mac0002/Desktop/dialog/projects/perf'      #os.path.dirname(os.path.realpath("__file__"))
 LOCAL_DATA_DIR  = os.path.join(LOCAL_WORK_DIR, 'data')
 NAO_HOME        = "/home/nao"
 NAO_WORK_DIR    = os.path.join(NAO_HOME, 'bench_dialog')
@@ -23,14 +23,14 @@ PROC_MEM_DATA   = ["VmSize","VmPeak","VmStk","VmRSS", "Threads"]
 ###
 ###     Net communication
 ###
-IP_1            = "192.168.0.15"
-IP_2            = "127.0.0.1"
+IP_1            = "10.0.204.145"
+IP_2            = "10.0.206.63"
 SOC_ADR_REMOTE  = IP_1
 SOC_ADR_LOC     = IP_2
-SOC_PORT_CTRL   = 6007
+SOC_PORT_CTRL   = 6004
 SOC_PORT_DATA   = 6006
-LOGIN           = 'tristan'
-PWD             = 'Spaghett1'
+LOGIN           = 'nao'
+PWD             = 'nao'
 
 ###
 ###     Verbosity

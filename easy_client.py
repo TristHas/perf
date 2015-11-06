@@ -34,11 +34,14 @@ class LightClient(object):
     def __init__(self, adict, ip = None):
         if not os.path.isdir(LOCAL_DATA_DIR):
             os.makedirs(LOCAL_DATA_DIR)
+        print adict['v']
         self.log = Logger(CLIENT_LOG_FILE, adict['v'])
         self.soc_ctrl = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.soc_ctrl.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.soc_ctrl.bind((IP_2, SOC_PORT_CTRL))
-        self.soc_ctrl.connect((SOC_ADR_REMOTE,SOC_PORT_CTRL))
+        self.log.debug('[MAIN THREAD] connecting...')
+        self.soc_ctrl.connect((IP_1,SOC_PORT_CTRL))
+        self.log.info('[MAIN THREAD] Client connected to server')
         self.transmit = Queue.Queue()
         self.receiving = True
         self.headers = None
@@ -47,19 +50,28 @@ class LightClient(object):
         return self
 
     def start_record(self):
+        self.log.debug('[MAIN THREAD] Asking server to start recording')
         send_data(self.soc_ctrl,START_RECORD)
+        self.log.info('[MAIN THREAD] Server asked to start recording')
 
     def stop_record(self):
+        self.log.debug('[MAIN THREAD] Asking server to stop recording')
         send_data(self.soc_ctrl,STOP_RECORD)
+        self.log.info('[MAIN THREAD] Server asked to stop recording')
 
     def start_receive(self):
         self.receiving = True
         self.data_receive = threading.Thread(target = self.receive, args = ())
+        self.log.info("[MAIN THREAD] Starting DATA THREAD")
         self.data_receive.start()
+        self.log.debug("[MAIN THREAD] DATA THREAD started")
 
     def stop_receive(self):
         self.receiving = False
+        self.log.info("[MAIN THREAD] Asked DATA THREAD to stop receiving")
+        self.log.debug("[MAIN THREAD] Sending server stop receive command")
         send_data(self.soc_ctrl, STOP_SEND)
+        self.log.debug("[MAIN THREAD] Stop command sent")
 
     def start_storage(self):
         send_data(self.soc_ctrl, START_STORE)
@@ -76,24 +88,23 @@ class LightClient(object):
             self.printing = True
             self.data_receive = threading.Thread(target = self.print_loop, args = (fig, ax, base_data))
             self.data_receive.start()
-            #if self.adict['v']
-            print "[MAIN THREAD] Print Thread started"
+            self.log.info("[MAIN THREAD] Print Thread started")
 
     def print_loop(self, fig, ax, base_data):
         while self.printing:
-            print '[PRINT THREAD] Getting data'
+            self.log.debug('[PRINT THREAD] Getting data')
             data = self.transmit.get()
-            print '[PRINT THREAD] Got data'
+            self.log.debug('[PRINT THREAD] Got data')
             if data == 'end':
                 self.printing = False
-                print '[PRINT THREAD] Treated end message'
+                self.log.info('[PRINT THREAD] Treated end message')
             else:
                 treat_data(data, base_data)
-                print '[PRINT THREAD] Data treated'
+                self.log.debug('[PRINT THREAD] Data treated')
                 #print 'Printer got, about to print'
                 print_dic(base_data, ax, fig)
-                print '[PRINT THREAD] Data treated'
-        print '[PRINT THREAD] Stop printing thread'
+                self.log.debug('[PRINT THREAD] Data treated')
+        self.log.info('[PRINT THREAD] Stop printing thread')
 
     def stop_print(self):
         self.printing = False
@@ -111,35 +122,31 @@ class LightClient(object):
         self.soc_data.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.soc_data.bind((IP_2, SOC_PORT_DATA))
         self.soc_data.connect((SOC_ADR_REMOTE,SOC_PORT_DATA))
-        print '[DATA THREAD] Connected'
+        self.log.info('[DATA THREAD] Connected')
 
         # treat header
         data = recv_data(self.soc_data)
         self.headers = treat_header(data)
 
         while self.receiving:
-            print '[DATA THREAD] waiting for data from server\n'
+            self.log.debug('[DATA THREAD] waiting for data from server\n')
             data = recv_data(self.soc_data)
-            #print '[DATA THREAD] Received data\n'
+            self.log.debug('[DATA THREAD] Received data {}\n'.format(data))
             if data:
-                #data = json.loads(data)
-                #print '[DATA THREAD] Putting data {}\n'.format(data)
                 self.transmit.put(data)
-                print '[DATA THREAD] Transmitted {} \n'.format(data)
-                #print '[DATA THREAD] has put data \n'
-                #print '[DATA THREAD] received {} \n'.format(data)
+                self.log.debug('[DATA THREAD] Transmitted data \n')
             else:
-                print '[DATA THREAD] Empty data received. Closing socket \n'
+                self.log.info('[DATA THREAD] Empty data received. Closing socket \n')
                 self.soc_data.close()
                 break
         if not self.receiving:
-            print '[DATA THREAD] self.receiving is False. Closing socket \n'
+            self.log.info('[DATA THREAD] self.receiving is False. Closing socket \n')
             self.soc_data.close()
         self.transmit.put('end')
-        print '[DATA THREAD] Exiting thread \n'
+        self.log.info('[DATA THREAD] Exiting thread \n')
 
     def __exit__(self, type, value, traceback):
-        print 'execute exit'
+        self.log.info('[MAIN THREAD] Disinstantiate client. Closing control socket')
         self.soc_ctrl.close()
 
 def parserArguments(parser):
@@ -166,13 +173,14 @@ local_commands = {
 }
 
 if __name__ == '__main__':
-
+    print 'Start'
     parser = argparse.ArgumentParser(description = 'dialog_cpu_stats')
     parserArguments(parser)
     args = parser.parse_args()
     adict = vars(args)
-
+    print 'Arguments parsed'
     with LightClient(adict) as client:
+        client.log.info('Client created')
         while True:
             line = raw_input()
             print '/' + line + '/'

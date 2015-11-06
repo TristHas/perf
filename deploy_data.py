@@ -24,10 +24,12 @@ def init_session():
     local_server_file = os.path.join(LOCAL_WORK_DIR, 'record_server.py')
     conf_file = os.path.join(LOCAL_WORK_DIR, 'conf.py')
     data_file = os.path.join(LOCAL_WORK_DIR, 'data_manager.py')
+    helper_file = os.path.join(LOCAL_WORK_DIR, 'helpers.py')
     put(local_cpu_file, NAO_WORK_DIR)
     put(local_server_file, NAO_WORK_DIR)
     put(conf_file, NAO_WORK_DIR)
     put(data_file, NAO_WORK_DIR)
+    put(helper_file, NAO_WORK_DIR)
     run('python /home/nao/bench_dialog/record_server.py < /dev/null > /dev/null 2>&1 &', pty = False)
     time.sleep(2)       # Give time to server for launch
     print 'Has run server'

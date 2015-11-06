@@ -1,7 +1,7 @@
 import numpy as np
 import time
 import matplotlib
-matplotlib.use('GTKAgg')
+#matplotlib.use('GTKAgg')
 from matplotlib import pyplot as plt
 
 
