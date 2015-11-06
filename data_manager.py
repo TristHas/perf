@@ -8,7 +8,7 @@ import json
 import os
 
 class DataManager(object):
-    def __init__(self, adict, cpu):
+    def __init__(self, adict, headers, targets, data):
         self.step = adict['step']
         self.timeout = int(adict['timeout'] / self.step)
 
@@ -22,18 +22,19 @@ class DataManager(object):
         self.targets = ['system'] + adict['processes']
         self.receivers = []
 
-        self.sys_headers = cpu.sys_headers
-        self.proc_headers = cpu.proc_headers
+        self.sys_headers = headers['system']
+        self.proc_headers = headers['process']
 
-        self.thr_start = threading.Thread(target = self.processing, name = 'data managing', args =(cpu,), kwargs=adict)
+        self.data_thread = threading.Thread(target = self.processing, name = 'data managing', args =(data,), kwargs=adict)
         self.log.info('Starting DATA THREAD')
-        self.thr_start.start()
+        self.data_thread.start()
         self.log.debug('DATA THREAD Started')
 
     def processing(self, *args, **adict):
         while self.run:
-            cpu = args[0]
-            data = cpu.transmit.get()
+            queue = args[0]
+            self.log.debug('[DATA THREAD] Waiting for queue')
+            data = queue.get()
             self.log.debug('[DATA THREAD] Got {}'.format(data))
             if self.local_store:
                 self.process_local(data)
@@ -44,9 +45,9 @@ class DataManager(object):
         self.run = False
 
     def start_send(self):
-        self.data_thr = threading.Thread(target = self.init_send, name = 'init_send_data', args = ())
+        self.init_thread = threading.Thread(target = self.init_send, name = 'init_send_data', args = ())
         self.log.info('Starting INIT THREAD')
-        self.data_thr.start()
+        self.init_thread.start()
         self.log.debug('INIT THREAD Started')
 
     def init_send(self):
@@ -57,7 +58,6 @@ class DataManager(object):
         self.log.info('[INIT THREAD] Waiting for a connection')
         connection, client_address = soc_data.accept()
         self.log.info('[INIT THREAD] Connection accepted from {}'.format(client_address))
-        self.receivers.append(connection)
         dico = {}
         for keys in self.targets:
             if keys == 'system':
@@ -70,6 +70,8 @@ class DataManager(object):
         self.log.debug('[INIT THREAD] Sending {}'.format(mess))
         send_data(connection, mess)
         self.log.info('[INIT THREAD] Headers sent. End of thread')
+        ### Sync data thread
+        self.receivers.append(connection)
 
     def process_send(self, connection, data):
         mess = json.dumps(data)

@@ -5,7 +5,7 @@ from conf import *
 from helpers import Logger, send_data
 from printer import print_dic, init_print
 import socket, threading, Queue, json
-import time, sys
+import time, sys, argparse
 
 def recv_data(soc):
     data = soc.recv(4096)
@@ -160,9 +160,9 @@ remote_commands = {
 }
 
 local_commands = {
-    'start print'   :,
-    'stop print'    :,
-    'get data'      :,
+    'start print'   :'',
+    'stop print'    :'',
+    'get data'      :'',
 }
 
 if __name__ == '__main__':
@@ -177,11 +177,11 @@ if __name__ == '__main__':
             line = raw_input()
             print '/' + line + '/'
             if line in remote_commands:
-
+                if line =='start send':
                     client.start_receive()
                     client.start_print()
                 else:
-                    send_data(client.soc_ctrl, line)
+                    send_data(client.soc_ctrl, remote_commands[line])
                 print "sent {}".format(line)
             else:
                 print 'wrong command argument'

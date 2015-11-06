@@ -1,51 +1,54 @@
 import os, time
 import threading
 from conf import *
-import Queue
+from helpers import Logger
 
 #############
-#####           Only Compatible 2.5 and above because of
-#####           MemAvailable field in meminfo
-#####           not available before 2.5
+#####           Only Compatible 2.5 as is
+#####           To make it compatible 2.4 and before
+#####           delete MemAvailable field from meminfo in conf
 #############
 
 class CPUWatcher(object):
     # Could easily add irq, frag, pgfault, and vmem from bench/cpuload.
     # Which are worth watching?
-    def __init__(self, adict):
+    def __init__(self, adict, headers, targets, data):
         if not os.path.isdir(NAO_DATA_DIR):
             os.makedirs(NAO_DATA_DIR)
 
-        # General variables
+        self.log = Logger(CPU_LOG_FILE, adict['v'])
         self.step = adict['step']
         self.timeout = int(adict['timeout'] / self.step)
 
         # Sync variables
-        self.transmit = Queue.Queue()
+        self.transmit = data
         self.run = True
         self.keep_running = False
         self.is_transmitting = False
 
         # Record var
-        self.proc_headers = self.get_proc_headers(adict)                    # Make and print headers
-        self.sys_headers = self.get_sys_headers(adict)
         self.sys_prev_cpu = {key:0 for key in SYS_CPU_DATA}
         self.time = 0
         self.load = 0
-        processes = adict['processes']
         self.proc = dict()
-        for process in processes:
-            try:
+        non_valid_processes = []
+        for process in targets['process']:
+            pid = self._get_pid(process)
+            if pid:
                 self.proc[process] = {
-                                    'pid':self._get_pid(process),
-                                    'prev_cpu':{key:0 for key in PROC_CPU_DATA}
-                                    }
-            except Exception as e:                                          # Should use specific Expeption class?
-                print e.message
-                print "Skipping this process"
+                        'pid':pid,
+                        'prev_cpu':{key:0 for key in PROC_CPU_DATA},
+                    }
+            else:
+                non_valid_processes.append(process)
+                self.log.warn("Non valid process {}. Skipping this process".format(process))
+        targets['process'] = [proc for proc in targets['process'] if (proc not in non_valid_processes)]
+        self.log.info("Targets for record are {}".format(targets['process']))
 
         self.thr_start = threading.Thread(target = self._launch_record, name = 'cpu_thread', args=(), kwargs=adict)
+        self.log.info('starting CPU Thread')
         self.thr_start.start()
+        self.log.debug('CPU Thread started')
 
     def quit(self):
         self.stop()
@@ -59,7 +62,6 @@ class CPUWatcher(object):
         ## os.makedirs(self.directory)
         self.keep_running=True
         print 'start start'
-
 
     def stop(self):
         """
@@ -80,16 +82,11 @@ class CPUWatcher(object):
         for proc in tmp:
             ps_result.remove(proc)
         if len(ps_result) != 1:
-            raise Exception("Problem getting process {}'s pid".format(process))
+            pid = 0
         else:
             pid = ps_result[0].split()[1]
         return pid
 
-    def get_sys_headers(self, adict):
-        return SYS_CPU_OTHER + LOAD_AVG + SYS_CPU_DATA + SYS_MEM_DATA
-
-    def get_proc_headers(self, adict):
-        return PROC_CPU_DATA + PROC_MEM_DATA
 
 
     # record methods

@@ -5,6 +5,7 @@ from helpers import *
 
 import argparse, time, os, sys
 import socket
+import Queue
 
 def parserArguments(parser):
     parser.add_argument('--proc' , dest = 'processes', nargs='*', default = [], help = 'processes to watch')
@@ -12,6 +13,20 @@ def parserArguments(parser):
     parser.add_argument('--step' , dest = 'step', type = int, default = '1' , help = 'period of recording in seconds')
     parser.add_argument('--rec' , dest = 'rec', nargs='*', default = ['local', 'remote'] , help = 'record mode, can be local or remote')
     parser.add_argument('--verbose', '-v' , dest = 'v', type = int, default = V_INFO , help = 'record mode, can be local or remote')
+
+target_type = ('system', 'process')
+
+def define_headers():
+    head = {}
+    head['process'] = PROC_CPU_DATA + PROC_MEM_DATA
+    head['system']  = SYS_CPU_OTHER + LOAD_AVG + SYS_CPU_DATA + SYS_MEM_DATA
+    return head
+
+def define_targets():
+    return {
+        'system' :['system'],
+        'process':adict['processes'],
+        }
 
 if __name__ == '__main__':
     try:
@@ -30,6 +45,12 @@ if __name__ == '__main__':
         log.info('[SERV PROC] Server is launched')
         log.debug(adict)
 
+        targets = define_targets()
+        log.debug(targets['process'])
+        log.debug(type(targets['process']))
+        headers = define_headers()
+        data    = Queue.Queue()
+
         # Waits for a client connection
         soc_ctrl = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         soc_ctrl.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -44,9 +65,9 @@ if __name__ == '__main__':
         log.info('[SERV PROC] Connection made by client {}'.format(client_address))
 
         # Instantiate CPUWatcher
-        cpu = CPUWatcher(adict)
+        cpu = CPUWatcher(adict, headers, targets, data)
         log.info('[SERV PROC] CPU Thread instantiated')
-        data_manager = DataManager(adict, cpu)
+        data_manager = DataManager(adict, headers, targets, data)
         log.info('[SERV PROC] DATA Thread instantiated')
 
         try:
