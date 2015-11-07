@@ -23,6 +23,14 @@ class Logger():
             self.file.flush()
             os.fsync(self.file)
 
+    def verb(self, mess):
+        if self.lev >= V_VERBOSE:
+            message = "[DBUG]{}:{}\n".format(time.time(), mess)
+            self.file.write(message)
+            self.file.flush()
+            os.fsync(self.file)
+
+
     def debug(self, mess):
         if self.lev >= V_DEBUG:
             message = "[DBUG]{}:{}\n".format(time.time(), mess)

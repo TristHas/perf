@@ -4,80 +4,79 @@ import matplotlib
 matplotlib.use('GTKAgg')
 from matplotlib import pyplot as plt
 from helpers import Logger
+from conf import *
 
 N_COL = 2
 
+CPU_LOG_FILE = os.path.join(LOCAL_DATA_DIR, 'cpu.log')
+log = Logger(CPU_LOG_FILE)
+
 def multi_init_print(data):
+    log.info('Init multi printing')
     plt.ion()
     fig_ret = []
     ax_ret = []
-    print 'data'
-    print data
+    log.verb('Multi print init data: {}'.format(data))
     for target in data:
-        print target
         n_elem = len(data[target])
-        print n_elem
+        log.debug('len({})= {}'.format(target, n_elem))
         n_col = N_COL
         if n_elem % n_col == 0:
             n_raw = int(n_elem / n_col)
         else:
             n_raw = int(n_elem / n_col) + 1
         fig, ax = plt.subplots(n_raw,n_col)
+        log.info('Subplots for {} are {} by {}'.format(target, n_raw, n_col))
         fig_ret.append(fig)
         ax_ret.append(ax)
     plt.show(False)
     plt.draw()
+    log.verb('Multi print init has plotted and has drawn')
     return fig_ret, ax_ret
 
 def init_print(dico):
-    print dico
+    log.info('Init single printing')
+    plt.ion()
+    log.verb('Print init data: {}'.format(dico))
     n_elem = len(dico)
-    print n_elem
+    log.debug('len({})= {}'.format(target, n_elem))
     n_col = N_COL
     if n_elem % n_col == 0:
         n_raw = int(n_elem / n_col)
     else:
         n_raw = int(n_elem / n_col) + 1
-    print n_raw
-    print n_col
     fig, ax = plt.subplots(n_raw,n_col)
+    log.info('Subplots are {} by {}'.format(n_raw, n_col))
     plt.show(False)
     plt.draw()
     return fig, ax
 
 
 def multi_print_dic(multi_dico, multi_ax, multi_fig):
-    print 'multi_dico:'
-    print multi_dico
+    log.verb('Multiprinting: {}'.format(multi_dico))
     for dico, ax, fig in zip(multi_dico, multi_ax, multi_fig):
         print_dic(multi_dico[dico], ax, fig)
 
 def print_dic(dico, ax, fig):
-    print 'dico:'
-    print dico
+    log.verb('Printing: {}'.format(dico))
     keys = dico.keys()
     ind = 0
     for raw in ax:
         if ind >= len(keys):
-            print 'breaking but big big warning'
+            log.warn('Odd Breaking while printing')
             break
         for column in raw:
-            print 'back in loop'
-            print '[PRINT THREAD] plot {}'.format(dico[keys[ind]])
+            log.debug('back in loop')
+            log.debug('plot {}'.format(dico[keys[ind]]))
             column.plot(dico[keys[ind]])
             column.set_title(keys[ind])
             ind += 1
-            print 'ind'
-            print ind
-            print 'len(keys)'
-            print len(keys)
             if ind >= len(keys):
-                print 'breaking'
+                log.verb('breaking')
                 break
-
-    print '[PRINT THREAD] Before drawing'
+    log.verb('Before drawing')
     fig.canvas.draw()
-    print '[PRINT THREAD] has drawn'
+    log.verb('Has drawn')
 
 
 def randomwalk(dims=(256, 256), n=20, sigma=5, alpha=0.95, seed=1):
@@ -150,9 +149,48 @@ def run(niter=1000, doblit=True):
     print "Blit = %s, average FPS: %.2f" % (
         str(doblit), niter / (time.time() - tic))
 
+
 if __name__ == '__main__':
+
+
+    dic_1 = {   'mem_size21':range(10),
+                'mem_size345':range(10),
+                'mem_size43':range(10),
+                'mem_size23':range(10),
+                'mem_size2':range(10),
+                'mem_size1':range(10),
+    }
+
+    dic_2 = {   'mem_size21':range(10),
+                'mem_size345':range(10),
+                'mem_size43':range(10),
+                'mem_size23':range(10),
+                'mem_size2':range(10),
+                'mem_size1':range(5),
+                'mem_size1':range(48),
+                'mem_info':[23,45,86,587]
+    }
+
+    def add_elem(dic):
+        for key in dic:
+            dic[key].append(0)
+
+    multi_dic = {'dic_1':dic_1, 'dic_2': dic_2, 'dic_3':dic_1}
+    fig, ax = multi_init_print(multi_dic)
+
+    iter = 20
+
+    for i in range(iter):
+        for dic in multi_dic:
+            add_elem(multi_dic[dic])
+        start = time.time()
+        multi_print_dic(multi_dic, ax, fig)
+        stop = time.time()
+        print stop - start
+    raw_input()
+
     #run(doblit=False)
-    run(doblit=True)
+    #run(doblit=True)
 
 
 
