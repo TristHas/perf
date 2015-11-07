@@ -2,52 +2,48 @@
 # -*- coding: utf-8 -*-
 
 from conf import *
-from helpers import Logger, send_data
-from printer import print_dic, init_print
+from helpers import Logger, send_data, recv_data
+#from printer import print_dic, init_print
+from data_client import DataClient
+from data_processing import DataProcessor
+
 import socket, threading, Queue, json
 import time, sys, argparse
 
-def recv_data(soc):
-    data = soc.recv(4096)
-    soc.sendall('sync')
-    return data
-
-def treat_header(header):
-    dico = json.loads(header)
-    print dico
-    ret = {}
-    for keys in dico:
-        ret[keys]={}
-        header_list = dico[keys]
-        for elem in header_list:
-            ret[keys][elem] = []
-    print '[DATA THREAD] Header: {}'.format(ret)
-    return ret
-
-def treat_data(data, base_data):
-    dico = json.loads(data)
-    for keys in dico:
-        for elem in base_data[keys]:
-            base_data[keys][elem].append(dico[keys][elem])
-
 class LightClient(object):
-    def __init__(self, adict, ip = None):
+    def __init__(self, adict):
         if not os.path.isdir(LOCAL_DATA_DIR):
             os.makedirs(LOCAL_DATA_DIR)
-        print adict['v']
+
+        # Logging
         self.log = Logger(CLIENT_LOG_FILE, adict['v'])
+        self.log.info('[MAIN THREAD] Instantiated client')
+        self.log.debug(adict)
+
+        # Central data
+        self.headers = self.define_headers()
+        self.transmit = Queue.Queue()
+
+        # Threads
+        self.data_client = DataClient(adict, self.transmit)
+        self.data_processor = DataProcessor(adict, self.transmit, self.headers)
+
+        # Connection
         self.soc_ctrl = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.soc_ctrl.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.soc_ctrl.bind((IP_2, SOC_PORT_CTRL))
         self.log.debug('[MAIN THREAD] connecting...')
         self.soc_ctrl.connect((IP_1,SOC_PORT_CTRL))
         self.log.info('[MAIN THREAD] Client connected to server')
-        self.transmit = Queue.Queue()
-        self.receiving = True
-        self.headers = None
 
     def __enter__(self):
         return self
+
+    def define_headers(self):
+        head = {}
+        head['process'] = PROC_CPU_DATA + PROC_MEM_DATA
+        head['system']  = SYS_CPU_OTHER + LOAD_AVG + SYS_CPU_DATA + SYS_MEM_DATA
+        return head
 
     def start_record(self):
         self.log.debug('[MAIN THREAD] Asking server to start recording')
@@ -61,17 +57,19 @@ class LightClient(object):
 
     def start_receive(self):
         self.receiving = True
-        self.data_receive = threading.Thread(target = self.receive, args = ())
-        self.log.info("[MAIN THREAD] Starting DATA THREAD")
-        self.data_receive.start()
+        self.log.debug('[MAIN THREAD] Asking server to start sending')
+        send_data(self.soc_ctrl,START_SEND)
+        self.log.info('[MAIN THREAD] Server asked to start sending')
+        self.data_client.start()
         self.log.debug("[MAIN THREAD] DATA THREAD started")
 
     def stop_receive(self):
-        self.receiving = False
-        self.log.info("[MAIN THREAD] Asked DATA THREAD to stop receiving")
-        self.log.debug("[MAIN THREAD] Sending server stop receive command")
+        self.log.debug('[MAIN THREAD] Asking server to stop sending')
         send_data(self.soc_ctrl, STOP_SEND)
-        self.log.debug("[MAIN THREAD] Stop command sent")
+        self.log.info("[MAIN THREAD] Asked server to stop receiving")
+        # Not ask data client to stop. It should stop with server
+        # channel closing.
+        self.receiving = False
 
     def start_storage(self):
         send_data(self.soc_ctrl, START_STORE)
@@ -80,6 +78,9 @@ class LightClient(object):
         send_data(self.soc_ctrl, STOP_STORE)
 
     def start_print(self):
+        self.data_processor.start_print()
+
+    def useless():
         while not self.headers:
             time.sleep(1)
         base_data = self.headers.copy()
@@ -116,34 +117,6 @@ class LightClient(object):
         send_data(self.soc_ctrl, STOP_ALL)
         self.soc_data.close()
 
-    def receive(self):
-        send_data(self.soc_ctrl,START_SEND)
-        self.soc_data = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.soc_data.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.soc_data.bind((IP_2, SOC_PORT_DATA))
-        self.soc_data.connect((SOC_ADR_REMOTE,SOC_PORT_DATA))
-        self.log.info('[DATA THREAD] Connected')
-
-        # treat header
-        data = recv_data(self.soc_data)
-        self.headers = treat_header(data)
-
-        while self.receiving:
-            self.log.debug('[DATA THREAD] waiting for data from server\n')
-            data = recv_data(self.soc_data)
-            self.log.debug('[DATA THREAD] Received data {}\n'.format(data))
-            if data:
-                self.transmit.put(data)
-                self.log.debug('[DATA THREAD] Transmitted data \n')
-            else:
-                self.log.info('[DATA THREAD] Empty data received. Closing socket \n')
-                self.soc_data.close()
-                break
-        if not self.receiving:
-            self.log.info('[DATA THREAD] self.receiving is False. Closing socket \n')
-            self.soc_data.close()
-        self.transmit.put('end')
-        self.log.info('[DATA THREAD] Exiting thread \n')
 
     def __exit__(self, type, value, traceback):
         self.log.info('[MAIN THREAD] Disinstantiate client. Closing control socket')
@@ -187,9 +160,10 @@ if __name__ == '__main__':
             if line in remote_commands:
                 if line =='start send':
                     client.start_receive()
-                    client.start_print()
                 else:
                     send_data(client.soc_ctrl, remote_commands[line])
                 print "sent {}".format(line)
+            elif line == 'print':
+                client.start_print()
             else:
                 print 'wrong command argument'

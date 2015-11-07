@@ -1,20 +1,52 @@
 import numpy as np
 import time
 import matplotlib
-#matplotlib.use('GTKAgg')
+matplotlib.use('GTKAgg')
 from matplotlib import pyplot as plt
+from helpers import Logger
 
+N_COL = 2
 
-def init_print():
+def multi_init_print(data):
     plt.ion()
-    plt.show()
-    fig, ax = plt.subplots(8,2)
+    fig_ret = []
+    ax_ret = []
+    for target in data:
+        n_elem = len(data)
+        n_col = N_COL
+        if n_elem % n_col == 0:
+            n_raw = int(n_elem / n_col)
+        else:
+            n_raw = int(n_elem / n_col) + 1
+        fig, ax = plt.subplots(8,2)
+        fig_ret.append(fig)
+        ax_ret.append(ax)
+    plt.show(False)
+    plt.draw()
+    return fig_ret, ax_ret
+
+def init_print(dico):
+    print dico
+    n_elem = len(dico)
+    print n_elem
+    n_col = N_COL
+    if n_elem % n_col == 0:
+        n_raw = int(n_elem / n_col)
+    else:
+        n_raw = int(n_elem / n_col) + 1
+    print n_raw
+    print n_col
+    fig, ax = plt.subplots(n_raw,n_col)
     plt.show(False)
     plt.draw()
     return fig, ax
 
+
+def multi_print_dic(multi_dico, multi_ax, multi_fig):
+    for dico, ax, fig in (multi_dico, multi_ax, multi_fig):
+        print_dic(dico, ax, fig)
+
 def print_dic(dico, ax, fig):
-    dico = dico['system']
     keys = dico.keys()
     ind = 0
     for raw in ax:

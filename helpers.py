@@ -43,3 +43,12 @@ def send_data(soc, mess):
         if data == FAIL:
             break
     return data
+
+def recv_data(soc):
+    data = soc.recv(4096)
+    soc.sendall(SYNC)
+    return data
+
+
+
+
