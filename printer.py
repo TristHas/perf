@@ -11,14 +11,18 @@ def multi_init_print(data):
     plt.ion()
     fig_ret = []
     ax_ret = []
+    print 'data'
+    print data
     for target in data:
-        n_elem = len(data)
+        print target
+        n_elem = len(data[target])
+        print n_elem
         n_col = N_COL
         if n_elem % n_col == 0:
             n_raw = int(n_elem / n_col)
         else:
             n_raw = int(n_elem / n_col) + 1
-        fig, ax = plt.subplots(8,2)
+        fig, ax = plt.subplots(n_raw,n_col)
         fig_ret.append(fig)
         ax_ret.append(ax)
     plt.show(False)
@@ -43,20 +47,34 @@ def init_print(dico):
 
 
 def multi_print_dic(multi_dico, multi_ax, multi_fig):
-    for dico, ax, fig in (multi_dico, multi_ax, multi_fig):
-        print_dic(dico, ax, fig)
+    print 'multi_dico:'
+    print multi_dico
+    for dico, ax, fig in zip(multi_dico, multi_ax, multi_fig):
+        print_dic(multi_dico[dico], ax, fig)
 
 def print_dic(dico, ax, fig):
+    print 'dico:'
+    print dico
     keys = dico.keys()
     ind = 0
     for raw in ax:
+        if ind >= len(keys):
+            print 'breaking but big big warning'
+            break
         for column in raw:
+            print 'back in loop'
             print '[PRINT THREAD] plot {}'.format(dico[keys[ind]])
             column.plot(dico[keys[ind]])
             column.set_title(keys[ind])
             ind += 1
+            print 'ind'
+            print ind
+            print 'len(keys)'
+            print len(keys)
             if ind >= len(keys):
+                print 'breaking'
                 break
+
     print '[PRINT THREAD] Before drawing'
     fig.canvas.draw()
     print '[PRINT THREAD] has drawn'

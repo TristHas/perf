@@ -74,7 +74,7 @@ class CPUWatcher(object):
         ps_result = os.popen('ps aux | grep {}'.format(process)).readlines()
         tmp = []
         for res in ps_result:
-            if 'record_server' in res:
+            if '--proc' in res:
                 tmp.append(res)
             if 'grep' in res:
                 tmp.append(res)

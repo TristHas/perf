@@ -40,6 +40,7 @@ class DataManager(object):
                 self.process_local(data)
             for socket in self.receivers:
                 self.process_send(socket, data)
+                self.log.debug('[DATA THREAD] Data sent')
 
     def quit(self):
         self.run = False
@@ -58,18 +59,19 @@ class DataManager(object):
         self.log.info('[INIT THREAD] Waiting for a connection')
         connection, client_address = soc_data.accept()
         self.log.info('[INIT THREAD] Connection accepted from {}'.format(client_address))
-        dico = {}
-        for keys in self.targets:
-            if keys == 'system':
-                dico[keys] = self.sys_headers
-                self.log.debug('[INIT THREAD] Got sys header')
-            else:
-                dico[keys] = self.proc_headers
-                self.log.debug('[INIT THREAD] Got proc header')
-        mess = json.dumps(dico)
-        self.log.debug('[INIT THREAD] Sending {}'.format(mess))
-        send_data(connection, mess)
-        self.log.info('[INIT THREAD] Headers sent. End of thread')
+        # No need to send headers anymore?
+        #dico = {}
+        #for keys in self.targets:
+        #    if keys == 'system':
+        #        dico[keys] = self.sys_headers
+        #        self.log.debug('[INIT THREAD] Got sys header')
+        #    else:
+        #        dico[keys] = self.proc_headers
+        #        self.log.debug('[INIT THREAD] Got proc header')
+        #mess = json.dumps(dico)
+        #self.log.debug('[INIT THREAD] Sending {}'.format(mess))
+        #send_data(connection, mess)
+        #self.log.info('[INIT THREAD] Headers sent. End of thread')
         ### Sync data thread
         self.receivers.append(connection)
 

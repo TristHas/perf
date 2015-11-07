@@ -3,18 +3,19 @@
 
 from conf import *
 from helpers import Logger
-from printer import init_print, print_dic
+from printer import multi_init_print, multi_print_dic
 import threading
 import json
 
 DATA_PROC_LOG_FILE = os.path.join(LOCAL_DATA_DIR, 'data_processor.log')
 
 class DataProcessor(object):
-    def __init__(self, adict, queue, headers):
+    def __init__(self, adict, queue, headers, targets):
         self.log = Logger(DATA_PROC_LOG_FILE, adict['v'])
         # Main thread communication
         self.transmit = queue
         self.headers = headers
+        self.targets = targets
 
         # print data
         self.printing = False
@@ -33,16 +34,17 @@ class DataProcessor(object):
         self.log.info('[MAIN THREAD] Start printing')
         self.build_print_headers()
         self.log.debug('[MAIN THREAD] Built headers')
-        self.fig, self.ax = init_print(self.base_data['system'])
+        self.fig, self.ax = multi_init_print(self.base_data)
         self.log.debug('[MAIN THREAD] Graphics initiated')
         self.printing = True
 
     def build_print_headers(self):
         ret = {}
-        for keys in self.headers:
-            ret[keys]={}
-            for elem in self.headers[keys]:
-                ret[keys][elem] = []
+        for types in self.targets:
+            for instance in self.targets[types]:
+                ret[instance]={}
+                for data_field in self.headers[types]:
+                    ret[instance][data_field] = []
         self.base_data = ret
         self.log.debug('[DATA THREAD] Header: {}'.format(self.base_data))
 
@@ -54,7 +56,7 @@ class DataProcessor(object):
             if self.printing:
                 to_print = self.build_print_data(data)
                 self.log.debug('[PROCESS THREAD] Printing')
-                print_dic(self.base_data['system'], self.ax, self.fig)
+                multi_print_dic(self.base_data, self.ax, self.fig)
                 self.log.debug('[PROCESS THREAD] Printed')
         self.log.info('[PRINT THREAD] Stop printing thread')
 

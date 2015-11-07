@@ -10,6 +10,26 @@ from data_processing import DataProcessor
 import socket, threading, Queue, json
 import time, sys, argparse
 
+
+### Code for server for sending headers.
+
+#dico = {}
+#for keys in self.targets:
+#    if keys == 'system':
+#        dico[keys] = self.sys_headers
+#        self.log.debug('[INIT THREAD] Got sys header')
+#    else:
+#        dico[keys] = self.proc_headers
+#        self.log.debug('[INIT THREAD] Got proc header')
+#mess = json.dumps(dico)
+#self.log.debug('[INIT THREAD] Sending {}'.format(mess))
+#send_data(connection, mess)
+#self.log.info('[INIT THREAD] Headers sent. End of thread')
+### Sync data thread
+
+
+
+
 class LightClient(object):
     def __init__(self, adict):
         if not os.path.isdir(LOCAL_DATA_DIR):
@@ -21,12 +41,13 @@ class LightClient(object):
         self.log.debug(adict)
 
         # Central data
-        self.headers = self.define_headers()
+        self.define_headers()
+        self.define_targets(adict)
         self.transmit = Queue.Queue()
 
         # Threads
         self.data_client = DataClient(adict, self.transmit)
-        self.data_processor = DataProcessor(adict, self.transmit, self.headers)
+        self.data_processor = DataProcessor(adict, self.transmit, self.headers, self.targets)
 
         # Connection
         self.soc_ctrl = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -43,7 +64,14 @@ class LightClient(object):
         head = {}
         head['process'] = PROC_CPU_DATA + PROC_MEM_DATA
         head['system']  = SYS_CPU_OTHER + LOAD_AVG + SYS_CPU_DATA + SYS_MEM_DATA
-        return head
+        self.headers = head
+
+    def define_targets(self, adict):
+        targ = {}
+        targ['system'] = ['system']
+        targ['process'] = adict['processes']
+        self.targets = targ
+        #print targ
 
     def start_record(self):
         self.log.debug('[MAIN THREAD] Asking server to start recording')
