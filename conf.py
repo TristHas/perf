@@ -37,7 +37,7 @@ PWD             = 'Spaghett1'
 ###
 ###     Verbosity
 ###
-V_WARN          = 4
+V_WARN          = 1
 V_INFO          = 2
 V_VERBOSE       = 3
 V_DEBUG         = 4

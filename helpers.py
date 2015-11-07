@@ -4,39 +4,44 @@ import os, time
 from conf import *
 
 class Logger():
-    def __init__(self, filename, level = V_INFO):
+    def __init__(self, filename, level = V_INFO, real_time = True):
         self.lev = level
         self.file = open(filename, 'w')
+        self.real_time = real_time
 
 
     def warn(self, mess):
         if self.lev >= V_WARN:
             message = "[WARN]{}:{}\n".format(time.time(), mess)
             self.file.write(message)
-            self.file.flush()
-            os.fsync(self.file)
+            if self.real_time:
+                self.file.flush()
+                os.fsync(self.file)
 
     def info(self, mess):
         if self.lev >= V_INFO:
             message = "[INFO]{}:{}\n".format(time.time(), mess)
             self.file.write(message)
-            self.file.flush()
-            os.fsync(self.file)
+            if self.real_time:
+                self.file.flush()
+                os.fsync(self.file)
 
     def verb(self, mess):
         if self.lev >= V_VERBOSE:
             message = "[DBUG]{}:{}\n".format(time.time(), mess)
             self.file.write(message)
-            self.file.flush()
-            os.fsync(self.file)
+            if self.real_time:
+                self.file.flush()
+                os.fsync(self.file)
 
 
     def debug(self, mess):
         if self.lev >= V_DEBUG:
             message = "[DBUG]{}:{}\n".format(time.time(), mess)
             self.file.write(message)
-            self.file.flush()
-            os.fsync(self.file)
+            if self.real_time:
+                self.file.flush()
+                os.fsync(self.file)
 
 
 def list_to_csv(input):

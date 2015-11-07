@@ -10,7 +10,7 @@ N_COL = 2
 PRINT_AXIS = range(15)
 
 PRINT_LOG_FILE = os.path.join(LOCAL_DATA_DIR, 'printer.log')
-log = Logger(PRINT_LOG_FILE, V_DEBUG)
+log = Logger(PRINT_LOG_FILE, V_WARN)
 
 def multi_init_print(data):
     log.info('Init multi printing')
@@ -162,12 +162,7 @@ def print_dic_fast(dico, (fig, ax, lines, backgrounds)):
             log.verb('breaking')
             break
 
-    #fig.canvas.draw()
-
-
-if __name__ == '__main__':
-
-
+def main():
     dic_1 = {   'mem_size21':range(10),
                 'mem_size345':range(10),
                 'mem_size43':range(10),
@@ -191,7 +186,7 @@ if __name__ == '__main__':
     def add_elem(dic):
         for key in dic:
             dic[key].append(5)
-    type = 'fast'
+    type = 'non_fast'
     iter = 5
 
     if type == 'fast':
@@ -215,6 +210,8 @@ if __name__ == '__main__':
             stop = time.time()
             print stop - start
 
-    raw_input()
+    #raw_input()
 
+if __name__ == '__main__':
+    main()
 
