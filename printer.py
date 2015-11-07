@@ -162,7 +162,7 @@ def print_dic_fast(dico, (fig, ax, lines, backgrounds)):
             log.verb('breaking')
             break
 
-def main():
+def test_print_time():
     dic_1 = {   'mem_size21':range(10),
                 'mem_size345':range(10),
                 'mem_size43':range(10),
@@ -213,5 +213,5 @@ def main():
     #raw_input()
 
 if __name__ == '__main__':
-    main()
+    test_print_time()
 

@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from conf import *
+from printer import *
 from helpers import Logger
-from printer import multi_init_print, multi_print_dic
 import threading
 import json
 
@@ -34,7 +34,7 @@ class DataProcessor(object):
         self.log.info('[MAIN THREAD] Start printing')
         self.build_print_headers()
         self.log.debug('[MAIN THREAD] Built headers')
-        self.fig, self.ax = multi_init_print(self.base_data)
+        self.print_data = multi_init_fast(self.base_data)
         self.log.debug('[MAIN THREAD] Graphics initiated')
         self.printing = True
 
@@ -56,17 +56,14 @@ class DataProcessor(object):
             if self.printing:
                 to_print = self.build_print_data(data)
                 self.log.debug('[PROCESS THREAD] Printing')
-                multi_print_dic(self.base_data, self.ax, self.fig)
+                multi_print_fast(self.base_data, self.print_data)
                 self.log.debug('[PROCESS THREAD] Printed')
         self.log.info('[PRINT THREAD] Stop printing thread')
 
     def build_print_data(self, data):
-        print type(data)
         dico = json.loads(data)
-        print dico
         for target in dico:
             for data_field in dico[target]:
-                print 'target {}, datafield {}'.format(target, data_field)
                 # Easy to handle data sequence length here
                 self.base_data[target][data_field].append(dico[target][data_field])
 

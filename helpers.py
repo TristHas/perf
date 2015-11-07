@@ -12,7 +12,7 @@ class Logger():
 
     def warn(self, mess):
         if self.lev >= V_WARN:
-            message = "[WARN]{}:{}\n".format(time.time(), mess)
+            message = "[W]{}:{}\n".format(time.time(), mess)
             self.file.write(message)
             if self.real_time:
                 self.file.flush()
@@ -20,7 +20,7 @@ class Logger():
 
     def info(self, mess):
         if self.lev >= V_INFO:
-            message = "[INFO]{}:{}\n".format(time.time(), mess)
+            message = "[I]{}:{}\n".format(time.time(), mess)
             self.file.write(message)
             if self.real_time:
                 self.file.flush()
@@ -28,7 +28,7 @@ class Logger():
 
     def verb(self, mess):
         if self.lev >= V_VERBOSE:
-            message = "[DBUG]{}:{}\n".format(time.time(), mess)
+            message = "[V]{}:{}\n".format(time.time(), mess)
             self.file.write(message)
             if self.real_time:
                 self.file.flush()
@@ -37,7 +37,7 @@ class Logger():
 
     def debug(self, mess):
         if self.lev >= V_DEBUG:
-            message = "[DBUG]{}:{}\n".format(time.time(), mess)
+            message = "[D]{}:{}\n".format(time.time(), mess)
             self.file.write(message)
             if self.real_time:
                 self.file.flush()
