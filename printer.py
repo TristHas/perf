@@ -7,9 +7,10 @@ from helpers import Logger
 from conf import *
 
 N_COL = 2
+PRINT_AXIS = range(15)
 
-CPU_LOG_FILE = os.path.join(LOCAL_DATA_DIR, 'cpu.log')
-log = Logger(CPU_LOG_FILE)
+PRINT_LOG_FILE = os.path.join(LOCAL_DATA_DIR, 'printer.log')
+log = Logger(PRINT_LOG_FILE, V_DEBUG)
 
 def multi_init_print(data):
     log.info('Init multi printing')
@@ -79,75 +80,89 @@ def print_dic(dico, ax, fig):
     log.verb('Has drawn')
 
 
-def randomwalk(dims=(256, 256), n=20, sigma=5, alpha=0.95, seed=1):
-    """ A simple random walk with memory """
-
-    r, c = dims
-    gen = np.random.RandomState(seed)
-    pos = gen.rand(2, n) * ((r,), (c,))
-    old_delta = gen.randn(2, n) * sigma
-
-    while True:
-        delta = (1. - alpha) * gen.randn(2, n) * sigma + alpha * old_delta
-        pos += delta
-        for ii in xrange(n):
-            if not (0. <= pos[0, ii] < r):
-                pos[0, ii] = abs(pos[0, ii] % r)
-            if not (0. <= pos[1, ii] < c):
-                pos[1, ii] = abs(pos[1, ii] % c)
-        old_delta = delta
-        yield pos
 
 
+def multi_init_fast(data):
+    print_data = {}
+    log.verb('Multi print init data: {}'.format(data))
+    for target in data:
+        print_data[target] = fast_init_single(data[target])
+    log.verb('Multi print init has plotted and has drawn')
+    return print_data
 
+def fast_init_single(dico):
+    n_elem = len(dico)
+    log.debug('len({})= {}'.format(dico, n_elem))
+    n_col = N_COL
+    if n_elem % n_col == 0:
+        n_raw = int(n_elem / n_col)
+    else:
+        n_raw = int(n_elem / n_col) + 1
 
-def run(niter=1000, doblit=True):
-    """
-    Display the simulation using matplotlib, optionally using blit for speed
-    """
+    fig, ax = plt.subplots(n_raw,n_col)
+    fig.show()
+    fig.canvas.draw()
 
-    fig, ax = plt.subplots(1,1)#(2, 8)
-    ax.set_aspect('equal')
-    ax.set_xlim(0, 255)
-    ax.set_ylim(0, 255)
-    ax.hold(True)
-    rw = randomwalk()
-    x, y = rw.next()
+    ind = 0
+    keys = dico.keys()
+    line_ret = []
+    background_ret = []
+    ax_ret = []
 
-    plt.show(False)
-    plt.draw()
+    for raw in ax:
+        if ind >= len(keys):
+            log.warn('Odd Breaking while printing')
+            break
+        for column in raw:
+            log.debug('back in loop')
+            log.debug('plot {}'.format(dico[keys[ind]]))
 
-    if doblit:
-        # cache the background
-        background = fig.canvas.copy_from_bbox(ax.bbox)
+            column.set_title(keys[ind])
 
-    points = ax.plot(x, y, 'o')[0]
-    tic = time.time()
+            line, = column.plot([0, 20], [0, 20])
+            line.set_xdata(PRINT_AXIS)
+            line_ret.append(line)
 
-    for ii in xrange(niter):
+            backgrounds = fig.canvas.copy_from_bbox(column.bbox)
+            background_ret.append(backgrounds)
 
-        # update the xy data
-        x, y = rw.next()
-        points.set_data(x, y)
+            ax_ret.append(column)
 
-        if doblit:
-            ax.draw()
-            # restore background
-            fig.canvas.restore_region(background)
+            ind += 1
+            if ind >= len(keys):
+                log.verb('breaking')
+                break
 
-            # redraw just the points
-            ax.draw_artist(points)
+    return fig, ax_ret, line_ret, background_ret
 
-            # fill in the axes rectangle
-            fig.canvas.blit(ax.bbox)
+def multi_print_fast(multi_dico, print_data):
+    log.verb('Multiprinting: {}'.format(multi_dico))
+    for keys in multi_dico:
+        print_dic_fast(multi_dico[keys], print_data[keys])
 
-        else:
-            # redraw everything
-            fig.canvas.draw()
+def print_dic_fast(dico, (fig, ax, lines, backgrounds)):
+    log.verb('Printing: {}'.format(dico))
+    keys = dico.keys()
+    for ind in range(len(keys)):
+        log.debug('back in loop')
 
-    plt.close(fig)
-    print "Blit = %s, average FPS: %.2f" % (
-        str(doblit), niter / (time.time() - tic))
+        ### Should do better here
+        ydata = dico[keys[ind]]
+        xdata = range(len(ydata))
+        log.debug('Before drawing')
+        fig.canvas.restore_region(backgrounds[ind])
+        lines[ind].set_data(xdata, ydata)
+        ax[ind].draw_artist(lines[ind])
+        fig.canvas.blit(ax[ind].bbox)
+        log.debug('Has drawn data {}'.format(lines[ind].get_data()))
+        ###
+
+        #column.set_title(keys[ind])
+        if ind >= len(keys):
+            log.verb('breaking')
+            break
+
+    #fig.canvas.draw()
 
 
 if __name__ == '__main__':
@@ -168,31 +183,38 @@ if __name__ == '__main__':
                 'mem_size2':range(10),
                 'mem_size1':range(5),
                 'mem_size1':range(48),
-                'mem_info':[23,45,86,587]
+                'mem_info':[23,45,86,587],
     }
+
+    multi_dic = {'dic_1':dic_1, 'dic_2':dic_2, 'dic_3':dic_1}
 
     def add_elem(dic):
         for key in dic:
-            dic[key].append(0)
+            dic[key].append(5)
+    type = 'fast'
+    iter = 5
 
-    multi_dic = {'dic_1':dic_1, 'dic_2': dic_2, 'dic_3':dic_1}
-    fig, ax = multi_init_print(multi_dic)
+    if type == 'fast':
+        print_data = multi_init_fast(multi_dic)
+        for i in range(iter):
+            for key in multi_dic:
+                add_elem(multi_dic[key])
+            start = time.time()
+            multi_print_fast(multi_dic, print_data)
+            stop = time.time()
+            print stop - start
 
-    iter = 20
 
-    for i in range(iter):
-        for dic in multi_dic:
-            add_elem(multi_dic[dic])
-        start = time.time()
-        multi_print_dic(multi_dic, ax, fig)
-        stop = time.time()
-        print stop - start
+    else:
+        fig, ax = multi_init_print(multi_dic)
+        for i in range(iter):
+            for key in multi_dic:
+                add_elem(multi_dic[key])
+            start = time.time()
+            multi_print_dic(multi_dic, ax, fig)
+            stop = time.time()
+            print stop - start
+
     raw_input()
-
-    #run(doblit=False)
-    #run(doblit=True)
-
-
-
 
 
