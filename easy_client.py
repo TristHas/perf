@@ -99,25 +99,14 @@ class LightClient(object):
         # channel closing.
         self.receiving = False
 
-    def start_storage(self):
-        send_data(self.soc_ctrl, START_STORE)
+    def start_store(self):
+        self.data_processor.start_store()
 
-    def stop_storage(self):
-        send_data(self.soc_ctrl, STOP_STORE)
+    def stop_store(self):
+        self.data_processor.stop_store()
 
     def start_print(self):
         self.data_processor.start_print()
-
-    def useless():
-        while not self.headers:
-            time.sleep(1)
-        base_data = self.headers.copy()
-        if self.receiving:
-            fig, ax = init_print()
-            self.printing = True
-            self.data_receive = threading.Thread(target = self.print_loop, args = (fig, ax, base_data))
-            self.data_receive.start()
-            self.log.info("[MAIN THREAD] Print Thread started")
 
     def print_loop(self, fig, ax, base_data):
         while self.printing:
@@ -162,8 +151,6 @@ remote_commands = {
     'stop record'   : STOP_RECORD,
     'start send'    : START_SEND,
     'stop send'     : STOP_SEND,
-    'start store'   : START_STORE,
-    'stop store'    : STOP_STORE,
     'stop'          : STOP_ALL,
 }
 
@@ -193,5 +180,9 @@ if __name__ == '__main__':
                 print "sent {}".format(line)
             elif line == 'print':
                 client.start_print()
+            elif line == "start store":
+                client.start_store()
+            elif line == "stop store":
+                client.stop_store()
             else:
                 print 'wrong command argument'

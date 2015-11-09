@@ -3,7 +3,7 @@
 
 from conf import *
 from printer import *
-from helpers import Logger
+from helpers import Logger, list_to_csv
 import threading
 import json
 
@@ -22,14 +22,41 @@ class DataProcessor(object):
         self.base_data = None
         self.fig = ()
         self.ax = ()
+        # store data
+        self.local_store = False
+        self.files = {}
 
         # Launching Thread
-        self.log.info('[MAIN THREAD] Launch proces thread')
         self.thr = threading.Thread(target = self.process, args = (), name = 'process_thread')
         self.log.info('[MAIN THREAD] Starting process thread')
         self.thr.start()
         self.log.debug('[MAIN THREAD] Process thread started')
 
+
+    ###
+    ###     Process Thread
+    ###
+    def process(self):
+        while True:
+            self.log.debug('[PROCESS THREAD] Getting data')
+            data = self.transmit.get()
+            data = json.loads(data)
+            self.log.debug('[PROCESS THREAD] Got data')
+            if self.printing:
+                to_print = self.build_print_data(data)
+                self.log.debug('[PROCESS THREAD] Printing')
+                multi_print_fast(self.base_data, self.print_data)
+                self.log.debug('[PROCESS THREAD] Printed')
+            if self.local_store:
+                # self.build_store_data?
+                self.process_store(data)
+                #### To write: self.process_local
+        self.log.info('[PROCESS THREAD] Stop printing thread')
+
+
+    ###
+    ###         Print utilities
+    ###
     def start_print(self):
         self.log.info('[MAIN THREAD] Start printing')
         self.build_print_headers()
@@ -37,6 +64,10 @@ class DataProcessor(object):
         self.print_data = multi_init_fast(self.base_data)
         self.log.debug('[MAIN THREAD] Graphics initiated')
         self.printing = True
+
+    def stop_print(self):
+        self.log.info('[MAIN THREAD] Stop printing')
+        self.printing = False
 
     def build_print_headers(self):
         ret = {}
@@ -48,32 +79,51 @@ class DataProcessor(object):
         self.base_data = ret
         self.log.debug('[DATA THREAD] Header: {}'.format(self.base_data))
 
-    def process(self):
-        while True:
-            self.log.debug('[PROCESS THREAD] Getting data')
-            data = self.transmit.get()
-            self.log.debug('[PROCESS THREAD] Got data')
-            if self.printing:
-                to_print = self.build_print_data(data)
-                self.log.debug('[PROCESS THREAD] Printing')
-                multi_print_fast(self.base_data, self.print_data)
-                self.log.debug('[PROCESS THREAD] Printed')
-        self.log.info('[PRINT THREAD] Stop printing thread')
-
-    def build_print_data(self, data):
-        dico = json.loads(data)
+    def build_print_data(self, dico):
         for target in dico:
             for data_field in dico[target]:
                 # Easy to handle data sequence length here
                 self.base_data[target][data_field].append(dico[target][data_field])
 
+    ####
+    ####        Storage utilities
+    ####
+    def start_store(self):
+        # Make record dir
+        self.log.info('[MAIN THREAD] Starting local storage')
+        directory = os.path.join(LOCAL_DATA_DIR, time.ctime())
+        os.makedirs(directory)
+        self.log.debug('[MAIN THREAD] Made local record dir')
+        # Open files
+        for types in self.targets:
+            for instance in self.targets[types]:
+                filename = os.path.join(directory, instance)
+                self.files[instance] = open(filename, 'w')
+                self.log.debug('[MAIN THREAD] Opened {}'.format(filename))
 
+        # Print headers
+        for key in self.files:
+            if key == 'system':
+                print >> self.files[key], list_to_csv(self.headers['system'])
+                self.log.debug('[MAIN THREAD] wrote {}'.format(list_to_csv(self.headers['system'])))
+            else:
+                print >> self.files[key], list_to_csv(self.headers['process'])
+                self.log.debug('[MAIN THREAD] wrote {}'.format(list_to_csv(self.headers['process'])))
+        self.local_store = True
+        self.log.debug('[MAIN THREAD] End start local')
 
+    def stop_store(self):
+        self.log.info('[MAIN THREAD] Stopping storage')
+        self.local_store = False
+        for key in self.files:
+            self.files[key].close()
+            self.log.debug('closed {}'.format(key))
 
-
-
-
-
+    def process_store(self, dico):
+        for target in self.files:
+            res = [dico[target][data_field] for data_field in dico[target]]
+            print >> self.files[target], list_to_csv(res)
+            self.log.debug('[PROCESS THREAD] Stored {}'.format(list_to_csv(res)))
 
 
 

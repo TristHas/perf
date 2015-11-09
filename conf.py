@@ -4,7 +4,7 @@ import os
 ###     Directory
 ###
 # Ubuntu /home/tristan/workspace/perf
-LOCAL_WORK_DIR  = '/home/tristan/workspace/perf'      #os.path.dirname(os.path.realpath("__file__"))
+LOCAL_WORK_DIR  = '/Users/d-fr-mac0002/Desktop/dialog/projects/perf'      #os.path.dirname(os.path.realpath("__file__"))
 LOCAL_DATA_DIR  = os.path.join(LOCAL_WORK_DIR, 'data')
 NAO_HOME        = "/home/nao"
 NAO_WORK_DIR    = os.path.join(NAO_HOME, 'bench_dialog')
@@ -25,18 +25,19 @@ PROC_MEM_DATA   = ["VmSize","VmPeak","VmStk","VmRSS", "Threads"]
 ###     Net communication
 ###
 # ubuntu "192.168.0.15"
-IP_1            = "192.168.0.15"
-IP_2            = "127.0.0.1"
+IP_1            = "10.0.206.47"
+IP_2            = "10.0.128.144"
 SOC_ADR_REMOTE  = IP_1
 SOC_ADR_LOC     = IP_2
 SOC_PORT_CTRL   = 6004
 SOC_PORT_DATA   = 6006
-LOGIN           = 'tristan'
-PWD             = 'Spaghett1'
+LOGIN           = 'nao'
+PWD             = 'nao'
 
 ###
 ###     Verbosity
 ###
+V_SILENT        = 0
 V_WARN          = 1
 V_INFO          = 2
 V_VERBOSE       = 3
@@ -56,7 +57,7 @@ PROCESSES       = 'qtcreator naoqi-service'
 ###     Logging
 ###
 SERV_LOG_INFO   = os.path.join(NAO_DATA_DIR,'log_info')
-SERV_LOG_ERROR   = os.path.join(NAO_DATA_DIR,'log_error')
+SERV_LOG_ERROR  = os.path.join(NAO_DATA_DIR,'log_error')
 
 ###
 ###     Ctrl Messages

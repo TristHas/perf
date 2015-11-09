@@ -42,53 +42,21 @@ class DataClient(object):
 
     def receive(self):
         while self.receiving:
-            self.log.debug('[DATA THREAD] waiting for data from server\n')
+            self.log.debug('[DATA THREAD] waiting for data from server')
             data = recv_data(self.soc_data)
             self.log.debug('[DATA THREAD] Received data {}\n'.format(data))
             if data:
                 self.transmit.put(data)
-                self.log.debug('[DATA THREAD] Transmitted data \n')
+                self.log.debug('[DATA THREAD] Transmitted data ')
             else:
-                self.log.info('[DATA THREAD] Empty data received. Closing socket \n')
+                self.log.info('[DATA THREAD] Empty data received. Closing socket ')
                 self.soc_data.close()
                 break
         if not self.receiving:
-            self.log.info('[DATA THREAD] self.receiving is False. Closing socket \n')
+            self.log.info('[DATA THREAD] self.receiving is False. Closing socket ')
             self.soc_data.close()
         #
         #self.transmit.put('end')# Not sure we should communicate like that
         #
         self.receiving = False
         self.log.info('[DATA THREAD] Exiting thread \n')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
