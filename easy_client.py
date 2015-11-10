@@ -166,11 +166,8 @@ if __name__ == '__main__':
     with LightClient(adict) as client:
         client.log.info('Client created')
         while sys.stdin in select.select([sys.stdin], [], [], 1000)[0]:
-            print 'select'
             line = sys.stdin.readline()
-            print line
             if line:
-                print '/' + line + '/'
                 if line =='start send\n':
                     client.start_receive()
                 elif line == 'stop send\n':
