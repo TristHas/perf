@@ -47,22 +47,16 @@ def list_to_csv(input):
 def send_data(soc, mess):
     soc.sendall(mess)
     while True:
-        print 'send_data has sent'
         data = soc.recv(8)
-        print 'send_data has received'
         if data == SYNC:
             break
         if data == FAIL:
             break
-    print 'send_data returning {}'.format(data)
     return data
 
 def recv_data(soc):
-    print 'recv data will receive'
     data = soc.recv(4096)
-    print 'recv data has received'
     soc.sendall(SYNC)
-    print 'recv data has sent'
     return data
 
 

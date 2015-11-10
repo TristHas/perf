@@ -4,6 +4,7 @@
 from conf import *
 from printer import *
 from helpers import Logger, list_to_csv
+import shutil, os
 import threading
 import json
 
@@ -32,7 +33,6 @@ class DataProcessor(object):
         self.thr.start()
         self.log.debug('[MAIN THREAD] Process thread started')
 
-
     ###
     ###     Process Thread
     ###
@@ -52,7 +52,6 @@ class DataProcessor(object):
                 self.process_store(data)
                 #### To write: self.process_local
         self.log.info('[PROCESS THREAD] Stop printing thread')
-
 
     ###
     ###         Print utilities
@@ -88,12 +87,17 @@ class DataProcessor(object):
     ####
     ####        Storage utilities
     ####
-    def start_store(self):
+    def start_store(self, dirname = None):
         # Make record dir
+        if dirname is None:
+            dirname = time.time()
         self.log.info('[MAIN THREAD] Starting local storage')
-        directory = os.path.join(LOCAL_DATA_DIR, time.ctime())
+        directory = os.path.join(LOCAL_DATA_DIR, dirname)
+        if os.path.isdir(directory):
+            shutil.rmtree(directory)
         os.makedirs(directory)
         self.log.debug('[MAIN THREAD] Made local record dir')
+
         # Open files
         for types in self.targets:
             for instance in self.targets[types]:

@@ -10,7 +10,108 @@ N_COL = 2
 PRINT_AXIS = range(15)
 
 PRINT_LOG_FILE = os.path.join(LOCAL_DATA_DIR, 'printer.log')
-log = Logger(PRINT_LOG_FILE, V_WARN)
+log = Logger(PRINT_LOG_FILE, V_DEBUG)
+
+def multi_init_fast(data):
+    print_data = {}
+    log.verb('Multi print init data: {}'.format(data))
+    for target in data:
+        print_data[target] = fast_init_single(data[target])
+    log.verb('Multi print init has plotted and has drawn')
+    return print_data
+
+def fast_init_single(dico):
+    n_elem = len(dico)
+    log.debug('len({})= {}'.format(dico, n_elem))
+    n_col = N_COL
+
+    if n_elem % n_col == 0:
+        n_raw = int(n_elem / n_col)
+    else:
+        n_raw = int(n_elem / n_col) + 1
+
+    fig, ax = plt.subplots(n_raw,n_col)
+    fig.show()
+    fig.canvas.draw()
+    log.debug(fig)
+
+    ind = 0
+    keys = dico.keys()
+    line_ret = []
+    background_ret = []
+    ax_ret = []
+
+    for raw in ax:
+        if ind >= len(keys):
+            log.warn('Odd Breaking while printing')
+            break
+        for column in raw:
+            log.debug('back in loop')
+            log.debug('plot title {}'.format(keys[ind]))
+
+            column.set_title(keys[ind])
+
+            line = column.plot([0, 20], [0, 20], animated=True)[0]
+            line.set_xdata(PRINT_AXIS)
+            line_ret.append(line)
+
+            backgrounds = fig.canvas.copy_from_bbox(column.bbox)
+            background_ret.append(backgrounds)
+
+            ax_ret.append(column)
+            log.debug([column])
+
+            ind += 1
+            if ind >= len(keys):
+                log.verb('breaking')
+                break
+    log.debug([fig])
+    fig.canvas.draw()
+    fig.canvas.flush_events()
+    return fig, ax_ret, line_ret, background_ret
+
+def multi_print_fast(multi_dico, print_data):
+    log.verb('Multiprinting: {}'.format(multi_dico))
+    for keys in multi_dico:
+        print_dic_fast(multi_dico[keys], print_data[keys])
+
+def print_dic_fast(dico, (fig, ax, lines, backgrounds)):
+    log.verb('Printing: {}'.format(dico))
+    keys = dico.keys()
+    for ind in range(len(keys)):
+        log.debug('back in loop')
+
+        ### Should do better here
+        ydata = dico[keys[ind]]
+        xdata = range(len(ydata))
+        log.debug('Before drawing')
+        fig.canvas.restore_region(backgrounds[ind])
+        lines[ind].set_data(xdata,ydata)#
+        log.debug([ax[ind]])
+        log.debug([fig])
+        ax[ind].draw_artist(lines[ind])
+        fig.canvas.blit(ax[ind].bbox)
+        log.debug('Has drawn data {}'.format(lines[ind].get_data()))
+
+        #column.set_title(keys[ind])
+        if ind >= len(keys):
+            log.verb('breaking')
+            break
+
+
+
+
+
+
+
+
+
+
+
+###
+###     Old non optimized printing utilities
+###     Should refactor input to match data_processor client workflow
+###
 
 def multi_init_print(data):
     log.info('Init multi printing')
@@ -40,7 +141,7 @@ def init_print(dico):
     plt.ion()
     log.verb('Print init data: {}'.format(dico))
     n_elem = len(dico)
-    log.debug('len({})= {}'.format(target, n_elem))
+    log.debug('len({})={}'.format(target, n_elem))
     n_col = N_COL
     if n_elem % n_col == 0:
         n_raw = int(n_elem / n_col)
@@ -82,85 +183,8 @@ def print_dic(dico, ax, fig):
 
 
 
-def multi_init_fast(data):
-    print_data = {}
-    log.verb('Multi print init data: {}'.format(data))
-    for target in data:
-        print_data[target] = fast_init_single(data[target])
-    log.verb('Multi print init has plotted and has drawn')
-    return print_data
 
-def fast_init_single(dico):
-    n_elem = len(dico)
-    log.debug('len({})= {}'.format(dico, n_elem))
-    n_col = N_COL
-    if n_elem % n_col == 0:
-        n_raw = int(n_elem / n_col)
-    else:
-        n_raw = int(n_elem / n_col) + 1
 
-    fig, ax = plt.subplots(n_raw,n_col)
-    fig.show()
-    fig.canvas.draw()
-
-    ind = 0
-    keys = dico.keys()
-    line_ret = []
-    background_ret = []
-    ax_ret = []
-
-    for raw in ax:
-        if ind >= len(keys):
-            log.warn('Odd Breaking while printing')
-            break
-        for column in raw:
-            log.debug('back in loop')
-            log.debug('plot {}'.format(dico[keys[ind]]))
-
-            column.set_title(keys[ind])
-
-            line, = column.plot([0, 20], [0, 20])
-            line.set_xdata(PRINT_AXIS)
-            line_ret.append(line)
-
-            backgrounds = fig.canvas.copy_from_bbox(column.bbox)
-            background_ret.append(backgrounds)
-
-            ax_ret.append(column)
-
-            ind += 1
-            if ind >= len(keys):
-                log.verb('breaking')
-                break
-
-    return fig, ax_ret, line_ret, background_ret
-
-def multi_print_fast(multi_dico, print_data):
-    log.verb('Multiprinting: {}'.format(multi_dico))
-    for keys in multi_dico:
-        print_dic_fast(multi_dico[keys], print_data[keys])
-
-def print_dic_fast(dico, (fig, ax, lines, backgrounds)):
-    log.verb('Printing: {}'.format(dico))
-    keys = dico.keys()
-    for ind in range(len(keys)):
-        log.debug('back in loop')
-
-        ### Should do better here
-        ydata = dico[keys[ind]]
-        xdata = range(len(ydata))
-        log.debug('Before drawing')
-        fig.canvas.restore_region(backgrounds[ind])
-        lines[ind].set_data(xdata, ydata)
-        ax[ind].draw_artist(lines[ind])
-        fig.canvas.blit(ax[ind].bbox)
-        log.debug('Has drawn data {}'.format(lines[ind].get_data()))
-        ###
-
-        #column.set_title(keys[ind])
-        if ind >= len(keys):
-            log.verb('breaking')
-            break
 
 def test_print_time():
     dic_1 = {   'mem_size21':range(10),

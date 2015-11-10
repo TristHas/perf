@@ -7,7 +7,7 @@ from helpers import Logger, send_data, recv_data
 from data_client import DataClient
 from data_processing import DataProcessor
 
-import socket, threading, Queue, json
+import socket, threading, select, Queue, json
 import time, sys, argparse
 
 
@@ -26,9 +26,6 @@ import time, sys, argparse
 #send_data(connection, mess)
 #self.log.info('[INIT THREAD] Headers sent. End of thread')
 ### Sync data thread
-
-
-
 
 class LightClient(object):
     def __init__(self, adict):
@@ -99,8 +96,8 @@ class LightClient(object):
         # channel closing.
         self.receiving = False
 
-    def start_store(self):
-        self.data_processor.start_store()
+    def start_store(self, dirname):
+        self.data_processor.start_store(dirname)
 
     def stop_store(self):
         self.data_processor.stop_store()
@@ -134,7 +131,6 @@ class LightClient(object):
         send_data(self.soc_ctrl, STOP_ALL)
         self.soc_data.close()
 
-
     def __exit__(self, type, value, traceback):
         self.log.info('[MAIN THREAD] Disinstantiate client. Closing control socket')
         self.soc_ctrl.close()
@@ -147,11 +143,11 @@ def parserArguments(parser):
     parser.add_argument('--verbose', '-v' , dest = 'v', type = int, default = V_INFO , help = 'record mode, can be local or remote')
 
 remote_commands = {
-    'start record'  : START_RECORD,
-    'stop record'   : STOP_RECORD,
+    'start record\n'  : START_RECORD,
+    'stop record\n'   : STOP_RECORD,
     'start send'    : START_SEND,
     'stop send'     : STOP_SEND,
-    'stop'          : STOP_ALL,
+    'stop\n'          : STOP_ALL,
 }
 
 local_commands = {
@@ -169,20 +165,38 @@ if __name__ == '__main__':
     print 'Arguments parsed'
     with LightClient(adict) as client:
         client.log.info('Client created')
-        while True:
-            line = raw_input()
-            print '/' + line + '/'
-            if line in remote_commands:
-                if line =='start send':
+        while sys.stdin in select.select([sys.stdin], [], [], 1000)[0]:
+            print 'select'
+            line = sys.stdin.readline()
+            print line
+            if line:
+                print '/' + line + '/'
+                if line =='start send\n':
                     client.start_receive()
-                else:
+                elif line == 'stop send\n':
+                    client.stop_receive()
+                elif line == 'stop\n':
+                    break
+                elif line == 'start record\n':
                     send_data(client.soc_ctrl, remote_commands[line])
-                print "sent {}".format(line)
-            elif line == 'print':
-                client.start_print()
-            elif line == "start store":
-                client.start_store()
-            elif line == "stop store":
-                client.stop_store()
-            else:
-                print 'wrong command argument'
+                elif line == 'stop record\n':
+                    send_data(client.soc_ctrl, remote_commands[line])
+                elif line == 'print\n':
+                    client.start_print()
+                elif line == "start store\n":
+                    client.start_store('easy_client')
+                elif line == "stop store\n":
+                    client.stop_store()
+                elif line == "quit\n":
+                    break
+                else:
+                    print 'wrong command argument'
+
+            else: # an empty line means stdin has been closed
+                print('eof')
+                sys.exit(0)
+        else:
+            print 'Exit because of user inaction'
+        client.stop_store()
+        client.stop_receive()
+        send_data(client.soc_ctrl, remote_commands[line])
