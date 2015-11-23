@@ -35,7 +35,7 @@ LOGIN           = 'nao'
 PWD             = 'nao'
 
 ###
-###     Verbosity
+###     Logging
 ###
 V_SILENT        = 0
 V_WARN          = 1
@@ -48,16 +48,18 @@ CPU_LOG_FILE    = os.path.join(NAO_DATA_DIR, 'cpu.log')
 CLIENT_LOG_FILE = os.path.join(LOCAL_DATA_DIR, 'cpu.log')
 
 
+
+###
+###     Print var
+###
+PRINT_TIC       = 60
+
+
 ###
 ###     Test Purposes
 ###
 PROCESSES       = 'qtcreator naoqi-service'
 
-###
-###     Logging
-###
-SERV_LOG_INFO   = os.path.join(NAO_DATA_DIR,'log_info')
-SERV_LOG_ERROR  = os.path.join(NAO_DATA_DIR,'log_error')
 
 ###
 ###     Ctrl Messages

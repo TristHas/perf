@@ -58,5 +58,5 @@ class DataClient(object):
         #
         #self.transmit.put('end')# Not sure we should communicate like that
         #
-        self.receiving = False
+        #self.receiving = False
         self.log.info('[DATA THREAD] Exiting thread \n')

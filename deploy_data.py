@@ -9,14 +9,9 @@ env.host_string = IP_1
 env.user        = LOGIN
 env.password    = PWD
 
-def init_session():
-    folders = run("ls {}".format(NAO_HOME))
-    if "bench_dialog" in folders:
-        run('rm -r {}'.format(NAO_WORK_DIR))
+def init_server_session():
 
-    if "bench_data" in folders:
-        run('rm -r {}'.format(NAO_DATA_DIR))
-
+    clean()
     run("mkdir {}".format(NAO_WORK_DIR))
     run("mkdir {}".format(NAO_DATA_DIR))
 
@@ -34,7 +29,7 @@ def init_session():
     time.sleep(2)       # Give time to server for launch
     print 'Has run server'
 
-def clean():
+def clean_server():
     folders = run("ls {}".format(NAO_HOME))
     if "bench_dialog" in folders:
         run('rm -r {}'.format(NAO_WORK_DIR))

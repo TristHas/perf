@@ -22,100 +22,102 @@ def multi_init_fast(data):
 
 def fast_init_single(dico):
     n_elem = len(dico)
-    log.debug('len({})= {}'.format(dico, n_elem))
+    log.debug('init dico: {}'.format(dico))
     n_col = N_COL
-
     if n_elem % n_col == 0:
         n_raw = int(n_elem / n_col)
     else:
         n_raw = int(n_elem / n_col) + 1
-
     fig, ax = plt.subplots(n_raw,n_col)
+    fig.set_size_inches(15, 10, forward=True)
     fig.show()
     fig.canvas.draw()
-    log.debug(fig)
-
     ind = 0
     keys = dico.keys()
-    line_ret = []
     background_ret = []
     ax_ret = []
-
     for raw in ax:
         if ind >= len(keys):
             log.warn('Odd Breaking while printing')
             break
         for column in raw:
-            log.debug('back in loop')
             log.debug('plot title {}'.format(keys[ind]))
-
             column.set_title(keys[ind])
+            # Set y axis length
+            column.yaxis.set_view_interval(0,PRINT_TIC)
+            #Create base line object
+            column.plot(np.zeros(PRINT_TIC), np.zeros(PRINT_TIC), animated=True)    # x_data should be range(PRINT_TIC))
+                                                                                    # But bug observed, when initialized with this, then
+                                                                                    # we can't adjust the view_interval.
+                                                                                    # Because of data_interval value?
+            log.debug('line data: {}'.format(column.lines[0].get_data()))
+            # Cache background
+            #column.bbox.union([label.get_window_extent() for label in column.get_xticklabels()])
+            backgrounds = fig.canvas.copy_from_bbox(column.bbox.expanded(1.2,1.2))#column.bbox.union([label.get_window_extent() for label in column.get_xticklabels()]))
 
-            line = column.plot([0, 20], [0, 20], animated=True)[0]
-            line.set_xdata(PRINT_AXIS)
-            line_ret.append(line)
-
-            backgrounds = fig.canvas.copy_from_bbox(column.bbox)
             background_ret.append(backgrounds)
-
+            # Flattens axes
             ax_ret.append(column)
-            log.debug([column])
-
             ind += 1
             if ind >= len(keys):
                 log.verb('breaking')
                 break
-    log.debug([fig])
     fig.canvas.draw()
-    fig.canvas.flush_events()
-    return fig, ax_ret, line_ret, background_ret
+    fig.canvas.flush_events() # Not sure what this does, is it necessary?
+    return fig, ax_ret, background_ret
 
 def multi_print_fast(multi_dico, print_data):
     log.verb('Multiprinting: {}'.format(multi_dico))
     for keys in multi_dico:
         print_dic_fast(multi_dico[keys], print_data[keys])
 
-def print_dic_fast(dico, (fig, ax, lines, backgrounds)):
+def print_dic_fast(dico, (fig, ax, backgrounds)):
     log.verb('Printing: {}'.format(dico))
     keys = dico.keys()
     for ind in range(len(keys)):
-        log.debug('back in loop')
+        line = ax[ind].lines[0]
 
-        ### Should do better here
+        # Set data
         ydata = dico[keys[ind]]
-        xdata = range(len(ydata))
+        xdata = range(len(ydata))                                       # Should not need xdata if fixed input
+        #print 'len(xdata)={}'.format(len(xdata))
+
+        ax[ind].xaxis.set_view_interval(0, len(xdata))                 # Should not need if fixed-size input
+        #print ax[ind].xaxis.get_view_interval()
+
+        if ydata[-1] > ax[ind].yaxis.get_view_interval()[1]:            # If added value exceed the printing box vertical limit
+            ax[ind].yaxis.set_view_interval(0, 1.2 * ydata[-1] )        # Augment printing box vertical limit
+
         log.debug('Before drawing')
         fig.canvas.restore_region(backgrounds[ind])
-        lines[ind].set_data(xdata,ydata)#
-        log.debug([ax[ind]])
-        log.debug([fig])
-        ax[ind].draw_artist(lines[ind])
-        fig.canvas.blit(ax[ind].bbox)
-        log.debug('Has drawn data {}'.format(lines[ind].get_data()))
-
-        #column.set_title(keys[ind])
+        line.set_data(xdata,ydata)
+        # Should draw the tics. The following lines does not print the values on the side. What artist handles it?
+        # It seems that draw_artist(y_axis) should do it but ax.bbox needs to be enlarged to contain the labels. CF init
+        ax[ind].draw_artist(ax[ind].yaxis)
+        ax[ind].draw_artist(ax[ind].xaxis)
+        ax[ind].draw_artist(line)
+        for title in ax[ind].texts:
+            print 'title {}'.format(title)
+            ax[ind].draw_artist(title)
+        #for labels in ax[ind].yaxis.get_ticklabels():
+        #    print labels
+            #ax[ind].draw_artist(labels)
+        fig.canvas.blit(ax[ind].bbox.expanded(1.2,1.2))
+        #fig.canvas.blit(ax[ind].bbox.expanded(1.2,1.1))
+        #fig.canvas.blit(ax[ind].bbox.union([label.get_window_extent() for label in ax[ind].get_xticklabels()]))
+        fig.canvas.flush_events()
+        log.debug('Has drawn {} : {}'.format(keys[ind], ax[ind].lines[0].get_data()))
         if ind >= len(keys):
             log.verb('breaking')
             break
-
-
-
-
-
-
-
-
-
-
 
 ###
 ###     Old non optimized printing utilities
 ###     Should refactor input to match data_processor client workflow
 ###
-
 def multi_init_print(data):
     log.info('Init multi printing')
-    plt.ion()
+    #plt.ion()
     fig_ret = []
     ax_ret = []
     log.verb('Multi print init data: {}'.format(data))
@@ -181,11 +183,6 @@ def print_dic(dico, ax, fig):
     log.verb('Has drawn')
 
 
-
-
-
-
-
 def test_print_time():
     dic_1 = {   'mem_size21':range(10),
                 'mem_size345':range(10),
@@ -205,37 +202,59 @@ def test_print_time():
                 'mem_info':[23,45,86,587],
     }
 
-    multi_dic = {'dic_1':dic_1, 'dic_2':dic_2, 'dic_3':dic_1}
+    multi_dic = {'dic_1':dic_1}#, 'dic_2':dic_2, 'dic_3':dic_1}
 
-    def add_elem(dic):
+    def add_elem(dic, num):
         for key in dic:
-            dic[key].append(5)
-    type = 'non_fast'
-    iter = 5
+            dic[key].append(num)
+    type = 'fast'
+    iter = 30
 
     if type == 'fast':
         print_data = multi_init_fast(multi_dic)
+        ax = print_data['dic_1'][1]
+        print ax
         for i in range(iter):
-            for key in multi_dic:
-                add_elem(multi_dic[key])
+            #raw_input()
             start = time.time()
             multi_print_fast(multi_dic, print_data)
             stop = time.time()
+            #data_int = ax[1].xaxis.get_data_interval()
+            #view_int = ax[1].xaxis.get_view_interval()
+            #print 'x_data_int: {}'.format(data_int)
+            #print 'x_view_int: {}'.format(view_int)
+            data_int = ax[0].yaxis.get_data_interval()
+            view_int = ax[0].yaxis.get_view_interval()
+            print 'y_data_int: {}'.format(data_int)
+            print 'y_view_int: {}'.format(view_int)
+            tics = ax[0].yaxis.get_ticklabels()
+            print 'tic labels : {}'.format(tics[-1])
+            print 'tic labels : {}'.format(tics[0])
+            ##
+            #print len(ax[0].lines)
+            #print ax[0].lines[0].get_data()
+            for key in multi_dic:
+                add_elem(multi_dic[key], i)
             print stop - start
 
 
     else:
         fig, ax = multi_init_print(multi_dic)
         for i in range(iter):
+            data_int = ax[0].xaxis.get_data_interval()
+            view_int = ax[0].xaxis.get_view_interval()
+            print 'data_x_int: {}'.format(data_int)
+            print 'view__x_int: {}'.format(view_int)
+            print ax[0].get_data()
             for key in multi_dic:
-                add_elem(multi_dic[key])
+                add_elem(multi_dic[key], i)
             start = time.time()
             multi_print_dic(multi_dic, ax, fig)
             stop = time.time()
             print stop - start
 
-    #raw_input()
+    raw_input()
 
 if __name__ == '__main__':
+    log.real_time = False
     test_print_time()
-

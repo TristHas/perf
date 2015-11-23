@@ -105,31 +105,20 @@ class LightClient(object):
     def start_print(self):
         self.data_processor.start_print()
 
-    def print_loop(self, fig, ax, base_data):
-        while self.printing:
-            self.log.debug('[PRINT THREAD] Getting data')
-            data = self.transmit.get()
-            self.log.debug('[PRINT THREAD] Got data')
-            if data == 'end':
-                self.printing = False
-                self.log.info('[PRINT THREAD] Treated end message')
-            else:
-                treat_data(data, base_data)
-                self.log.debug('[PRINT THREAD] Data treated')
-                #print 'Printer got, about to print'
-                print_dic(base_data, ax, fig)
-                self.log.debug('[PRINT THREAD] Data treated')
-        self.log.info('[PRINT THREAD] Stop printing thread')
+    def stop_print(self):
+        self.printing = data_processor.stop_print()
 
     def stop_print(self):
-        self.printing = False
+        self.data_processor.stop_print()
+
+    def stop_process(self):
+        self.stop_print()
+        self.stop_store()
+        self.data_processor.stop()
 
     def stop_all(self):
-        self.stop_storage()
-        self.stop_print()
-        self.stop_receive()
+        self.stop_process()
         send_data(self.soc_ctrl, STOP_ALL)
-        self.soc_data.close()
 
     def __exit__(self, type, value, traceback):
         self.log.info('[MAIN THREAD] Disinstantiate client. Closing control socket')
@@ -173,6 +162,7 @@ if __name__ == '__main__':
                 elif line == 'stop send\n':
                     client.stop_receive()
                 elif line == 'stop\n':
+                    client.stop_all()
                     break
                 elif line == 'start record\n':
                     send_data(client.soc_ctrl, remote_commands[line])
@@ -185,15 +175,16 @@ if __name__ == '__main__':
                 elif line == "stop store\n":
                     client.stop_store()
                 elif line == "quit\n":
+                    client.stop_all()
                     break
                 else:
                     print 'wrong command argument'
-
             else: # an empty line means stdin has been closed
                 print('eof')
                 sys.exit(0)
         else:
             print 'Exit because of user inaction'
-        client.stop_store()
-        client.stop_receive()
-        send_data(client.soc_ctrl, remote_commands[line])
+        print 'line ={} /'.format(line)
+        #client.stop_store()
+        #client.stop_receive()
+        #send_data(client.soc_ctrl, remote_commands[line])
