@@ -12,7 +12,7 @@ class DataClient(object):
         if not os.path.isdir(LOCAL_DATA_DIR):
             os.makedirs(LOCAL_DATA_DIR)
         self.log = Logger(DATA_CLIENT_LOG_FILE, adict['v'])
-        self.log.info('Instantiatie data_client')
+        self.log.info('[MAIN THREAD] Instantiatie data_client')
         self.transmit = queue
         self.receiving = False
         self.remote_ip = ip
@@ -24,7 +24,6 @@ class DataClient(object):
     def start(self):
         self.soc_data = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.soc_data.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.soc_data.bind((self.my_ip, SOC_PORT_DATA))
         self.log.debug('[MAIN THREAD] Connecting to server data channel')
         self.soc_data.connect((self.remote_ip,SOC_PORT_DATA))
         self.log.info('[MAIN THREAD] Data Channel Connected')
@@ -35,9 +34,6 @@ class DataClient(object):
         self.log.debug('[MAIN THREAD] DATA THREAD started')
 
     def stop(self):
-        # Not good practice
-        self.log.debug("[MAIN THREAD] Sending server stop receive command")
-        send_data(self.soc_ctrl, STOP_SEND)
         self.log.debug("[MAIN THREAD] Stop command sent")
         self.receiving = False
         self.log.info("[MAIN THREAD] Asked DATA THREAD to stop receiving")
@@ -50,11 +46,10 @@ class DataClient(object):
             if data:
                 self.transmit.put(data)
                 self.log.debug('[DATA THREAD] Transmitted data ')
-            else:
+            else:   # Not sure this should exist
                 self.log.info('[DATA THREAD] Empty data received. Closing socket ')
                 self.soc_data.close()
                 break
-
         if not self.receiving:
             self.log.info('[DATA THREAD] self.receiving is False. Closing socket ')
             self.soc_data.close()

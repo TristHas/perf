@@ -7,7 +7,7 @@ from conf import *
 
 
 
-def init_server_session(ip = IP_1):
+def init_server_session(ip = IP_1, no_run = False):
     env.user        = LOGIN
     env.password    = PWD
     env.host_string = ip
@@ -25,9 +25,13 @@ def init_server_session(ip = IP_1):
     put(conf_file, NAO_WORK_DIR)
     put(data_file, NAO_WORK_DIR)
     put(helper_file, NAO_WORK_DIR)
-    run('python /home/nao/bench_dialog/record_server.py < /dev/null > /dev/null 2>&1 &', pty = False)
+    if not no_run:
+        run('python /home/nao/bench_dialog/record_server.py < /dev/null > /dev/null 2>&1 &', pty = False)
+        print 'Has run server'
+    else:
+        print 'not running server'
     time.sleep(2)       # Give time to server for launch
-    print 'Has run server'
+
 
 def clean_server():
     folders = run("ls {}".format(NAO_HOME))
@@ -39,6 +43,7 @@ def clean_server():
 
 def parserArguments(parser):
     parser.add_argument('--clean', '-c', dest = 'clean', action = 'store_true', help = 'Cleans remote HOME. If not specified uploads files')
+    parser.add_argument('--no_run', '-n', dest = 'no_run', action = 'store_true', help = 'Does not run the server')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'dialog_cpu_stats')
@@ -48,4 +53,4 @@ if __name__ == '__main__':
     if adict['clean']:
         clean_server()
     else:
-        init_server_session()
+        init_server_session(no_run = adict['no_run'])

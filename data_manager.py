@@ -34,7 +34,6 @@ class DataManager(object):
             self.log.debug('[DATA THREAD] Got {}'.format(data))
             for socket in self.receivers:
                 self.process_send(socket, data)
-                self.log.debug('[DATA THREAD] Data sent')
 
     def quit(self):
         self.run = False
@@ -58,7 +57,10 @@ class DataManager(object):
     def process_send(self, connection, data):
         mess = json.dumps(data)
         self.log.debug('[DATA THREAD] Sending data {}'.format(mess))
-        send_data(connection, mess)
+        status = send_data(connection, mess)
+        if status == '':
+            self.receivers.remove(connection)
+            self.log.info('[DATA THREAD] connection removed')
         self.log.debug('[DATA THREAD] Data sent')
 
     def stop_send(self):
@@ -69,3 +71,8 @@ class DataManager(object):
             elem.close()
             self.log.debug('[MAIN THREAD] Closed data socket')
 
+    def is_sending(self):
+        if len(self.receivers) > 0:
+            return True
+        else:
+            return False

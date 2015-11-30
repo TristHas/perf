@@ -25,7 +25,7 @@ PROC_MEM_DATA   = ["VmSize","VmPeak","VmStk","VmRSS", "Threads"]
 ###     Net communication
 ###
 # ubuntu "192.168.0.15"
-IP_1            = "10.0.206.47"
+IP_1            = "10.0.132.17"
 IP_2            = "10.0.128.144"
 SOC_ADR_REMOTE  = IP_1
 SOC_ADR_LOC     = IP_2
@@ -37,7 +37,9 @@ PWD             = 'nao'
 ###
 ###     Logging
 ###
-V_SILENT        = 0
+
+V_SILENT        = -1
+V_ERROR         = 0
 V_WARN          = 1
 V_INFO          = 2
 V_VERBOSE       = 3

@@ -43,15 +43,17 @@ class LightClient(object):
         self.define_targets(adict)
         self.transmit = Queue.Queue()
 
-        # Threads
+        # workers
         self.data_client = DataClient(adict, self.transmit, ip)
         self.data_processor = DataProcessor(adict, self.transmit, self.headers, self.targets)
 
         # Connection
+        self.connect(ip)
+
+    def connect(self, ip):
         self.soc_ctrl = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.soc_ctrl.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         my_ip = socket.gethostbyname('')
-        self.soc_ctrl.bind((my_ip, SOC_PORT_CTRL))
         self.log.debug('[MAIN THREAD] connecting...')
         self.soc_ctrl.connect((ip,SOC_PORT_CTRL))
         self.log.info('[MAIN THREAD] Client connected to server')
@@ -82,19 +84,22 @@ class LightClient(object):
         if not self.receiving:
             self.receiving = True
             self.log.debug('[MAIN THREAD] Asking server to start sending')
-            send_data(self.soc_ctrl,START_SEND)
+            status = send_data(self.soc_ctrl,START_SEND)
             self.log.info('[MAIN THREAD] Server asked to start sending')
-            self.data_client.start()
+            if status == FAIL:
+                self.log.error('[MAIN THREAD] Client tried to receive but server denied it')
+            else:
+                self.data_client.start()
+                self.log.error('[MAIN THREAD] Client is receiving')
             self.log.debug("[MAIN THREAD] DATA THREAD started")
         else:
             self.log.warn("[MAIN THREAD] Asked to start receiving while already receiving")
 
     def stop_receive(self):
         if self.receiving:
-            self.log.debug('[MAIN THREAD] Asking server to stop sending')
-            send_data(self.soc_ctrl, STOP_SEND)
+            self.log.debug('[MAIN THREAD] Closing data channel. Exiting data client thread')
+            self.data_client.stop()
             self.log.info("[MAIN THREAD] Asked server to stop receiving")
-            # Not ask data client to stop. It should stop with server
             self.receiving = False
         else:
             self.log.warn("[MAIN THREAD] Asked to stop receiving while already receiving")
@@ -118,6 +123,8 @@ class LightClient(object):
         self.stop_print()
         self.stop_store()
         self.data_processor.stop()
+        self.stop_receive()
+        self.soc_ctrl.close()
 
     def stop_all(self):
         self.stop_process()
@@ -172,9 +179,9 @@ if __name__ == '__main__':
                 client.stop_all()
                 break
             elif line == 'start record\n':
-                send_data(client.soc_ctrl, remote_commands[line])
+                client.start_record()
             elif line == 'stop record\n':
-                send_data(client.soc_ctrl, remote_commands[line])
+                client.stop_record()
             elif line == 'print\n':
                 client.start_print()
             elif line == "start store\n":
@@ -182,7 +189,7 @@ if __name__ == '__main__':
             elif line == "stop store\n":
                 client.stop_store()
             elif line == "quit\n":
-                client.stop_all()
+                client.stop_process()
                 break
             else:
                 print 'wrong command argument'
@@ -190,6 +197,7 @@ if __name__ == '__main__':
             print('eof')
             sys.exit(0)
     else:
+        client.stop_process()
         print 'Exit because of user inaction'
     print 'line ={} /'.format(line)
         #client.stop_store()
