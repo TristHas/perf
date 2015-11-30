@@ -56,7 +56,7 @@ class DataProcessor(object):
                 if self.printing:
                     to_print = self.build_print_data(data)
                     self.log.debug('[PROCESS THREAD] Printing')
-                    multi_print_fast(self.base_data, self.print_data)
+                    multi_print_dic(self.base_data, self.print_data)
                     self.log.debug('[PROCESS THREAD] Printed')
                 if self.local_store:
                     # self.build_store_data?
@@ -73,7 +73,7 @@ class DataProcessor(object):
         self.log.info('[MAIN THREAD] Start printing')
         self.build_print_headers()
         self.log.debug('[MAIN THREAD] Built headers')
-        self.print_data = multi_init_fast(self.base_data)
+        self.print_data = multi_init_print(self.base_data)
         self.log.debug('[MAIN THREAD] Graphics initiated')
         self.printing = True
 
@@ -103,7 +103,7 @@ class DataProcessor(object):
 
     def process_store(self, dico):
         print dico
-        print self.files
+        #print self.files
         for target in self.files:
             res = [dico[target][data_field] for data_field in dico[target]]
             print >> self.files[target], list_to_csv(res)

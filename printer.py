@@ -1,7 +1,7 @@
 import numpy as np
 import time
 import matplotlib
-matplotlib.use('GTKAgg')
+#matplotlib.use('GTKAgg')
 from matplotlib import pyplot as plt
 from helpers import Logger
 from conf import *
@@ -10,7 +10,7 @@ N_COL = 2
 PRINT_AXIS = range(15)
 
 PRINT_LOG_FILE = os.path.join(LOCAL_DATA_DIR, 'printer.log')
-log = Logger(PRINT_LOG_FILE, V_DEBUG)
+log = Logger(PRINT_LOG_FILE, V_INFO)
 
 def multi_init_fast(data):
     print_data = {}
@@ -156,7 +156,7 @@ def init_print(dico):
     return fig, ax
 
 
-def multi_print_dic(multi_dico, multi_ax, multi_fig):
+def multi_print_dic(multi_dico, (multi_fig, multi_ax)):
     log.verb('Multiprinting: {}'.format(multi_dico))
     for dico, ax, fig in zip(multi_dico, multi_ax, multi_fig):
         print_dic(multi_dico[dico], ax, fig)

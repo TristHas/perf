@@ -175,9 +175,6 @@ if __name__ == '__main__':
                 client.start_receive()
             elif line == 'stop send\n':
                 client.stop_receive()
-            elif line == 'stop\n':
-                client.stop_all()
-                break
             elif line == 'start record\n':
                 client.start_record()
             elif line == 'stop record\n':
@@ -188,6 +185,11 @@ if __name__ == '__main__':
                 client.start_store('easy_client')
             elif line == "stop store\n":
                 client.stop_store()
+            elif line == "start print\n":
+                client.start_print()
+            elif line == "stop print\n":
+                client.stop_print()
+
             elif line == "quit\n":
                 client.stop_process()
                 break
