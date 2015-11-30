@@ -3,7 +3,7 @@
 #from functionaltools import ssh_tools
 
 from conf import *
-from deploy_data import init_session, clean
+from deploy_data import init_server_session, clean_server
 from easy_client import LightClient
 from fabric.api import env
 import argparse, os, time, json
@@ -21,12 +21,13 @@ class RemoteCPUWatch(object):
             env.host_string = ip
         else:
             self.ip = REMOTE_IP_DEF
-        init_session()
+        init_server_session(self.ip)
         self.client = LightClient(self.ip)
         self.record = False
         self.receive = False
         self.printer = False
         self.store = False
+        self.files = []
 
     def __enter__(self):
         return self
@@ -39,27 +40,34 @@ class RemoteCPUWatch(object):
         self.receive = True
         self.printer = True
 
-    def start_store(self):
-        self.client.start_record()
-        self.client.start_storage()
-        self.store = True
-
-    def stop_store(self):
-        self.client.stop_storage()
-        self.store = False
-        if not self.check_action():
-            self.client.stop_record()
-
-    def check_action(self):
-        return self.receive or self.store
-
     def stop_display(self):
-        self.client.stop_receive()
-        self.receive = False
         self.client.stop_print()
         self.printer = False
         if not self.check_action():
+            self.client.stop_receive()
+            self.receive = False
             self.client.stop_record()
+            self.record = False
+
+    def start_store(self):
+        self.client.start_record()
+        self.client.start_receive()
+        self.files = self.client.start_store()
+        self.store = True
+        self.record = True
+        self.receive = True
+
+    def stop_store(self):
+        self.client.stop_store()
+        self.store = False
+        if not self.check_action():
+            self.client.stop_receive()
+            self.receive = False
+            self.client.stop_record()
+            self.record = False
+
+    def check_action(self):
+        return self.printer or self.store
 
     def get_data(self):
         pass
@@ -68,8 +76,7 @@ class RemoteCPUWatch(object):
         self.stop_display()
         self.stop_store()
         self.client.stop_all()
-        clean()
-        pass
+        clean_server()
 
 def parserArguments(parser):
     parser.add_argument('--proc' , dest = 'proc', nargs='*',
@@ -83,18 +90,20 @@ def parserArguments(parser):
     parser.add_argument('--verbose', '-v' , dest = 'v', type = int,
         default = 1 , help = 'verbosity level')
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description = 'client for requesting robot system data')
     parserArguments(parser)
     args = parser.parse_args()
     adict = vars(args)
+
     for key in adict:
         print '{key}:{value}'.format(key= str(key), value = adict[key])
 
-    with RemoteCPUWatch() as cpu:
+    with RemoteCPUWatch(ip = '10.0.132.32') as cpu:
         print 'cpu started'
-        cpu.start_display()
+        #cpu.start_display()
         cpu.start_store()
         print 'actions started'
         time.sleep(30)

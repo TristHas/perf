@@ -5,13 +5,13 @@ from fabric.api import run, cd, env, put, get
 import argparse, time
 from conf import *
 
-env.host_string = IP_1
-env.user        = LOGIN
-env.password    = PWD
 
-def init_server_session():
 
-    clean()
+def init_server_session(ip = IP_1):
+    env.user        = LOGIN
+    env.password    = PWD
+    env.host_string = ip
+    clean_server()
     run("mkdir {}".format(NAO_WORK_DIR))
     run("mkdir {}".format(NAO_DATA_DIR))
 
@@ -40,13 +40,12 @@ def clean_server():
 def parserArguments(parser):
     parser.add_argument('--clean', '-c', dest = 'clean', action = 'store_true', help = 'Cleans remote HOME. If not specified uploads files')
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'dialog_cpu_stats')
     parserArguments(parser)
     args = parser.parse_args()
     adict = vars(args)
     if adict['clean']:
-        clean()
+        clean_server()
     else:
-        init_session()
+        init_server_session()

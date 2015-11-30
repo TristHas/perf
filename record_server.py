@@ -7,8 +7,10 @@ import argparse, time, os, sys
 import socket
 import Queue
 
+
+
 def parserArguments(parser):
-    parser.add_argument('--proc' , dest = 'processes', nargs='*', default = [], help = 'processes to watch')
+    parser.add_argument('--proc' , dest = 'processes', nargs='*', default = ['naoqi-service'], help = 'processes to watch')
     parser.add_argument('--tout' , dest = 'timeout', type = int, default = '10000' , help = 'timeout in seconds')
     parser.add_argument('--step' , dest = 'step', type = int, default = '1' , help = 'period of recording in seconds')
     parser.add_argument('--rec' , dest = 'rec', nargs='*', default = ['local', 'remote'] , help = 'record mode, can be local or remote')
@@ -52,7 +54,7 @@ if __name__ == '__main__':
         # Waits for a client connection
         soc_ctrl = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         soc_ctrl.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        soc_ctrl.bind((IP_1, SOC_PORT_CTRL))
+        soc_ctrl.bind(('', SOC_PORT_CTRL))
         soc_ctrl.listen(1)
 
         ###

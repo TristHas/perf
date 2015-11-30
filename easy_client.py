@@ -28,7 +28,7 @@ import time, sys, argparse
 ### Sync data thread
 
 class LightClient(object):
-    def __init__(self, adict):
+    def __init__(self, ip, adict = {'v': V_INFO, 'processes':['naoqi-service']}):
         if not os.path.isdir(LOCAL_DATA_DIR):
             os.makedirs(LOCAL_DATA_DIR)
 
@@ -38,24 +38,23 @@ class LightClient(object):
         self.log.debug(adict)
 
         # Central data
+        self.receiving = False
         self.define_headers()
         self.define_targets(adict)
         self.transmit = Queue.Queue()
 
         # Threads
-        self.data_client = DataClient(adict, self.transmit)
+        self.data_client = DataClient(adict, self.transmit, ip)
         self.data_processor = DataProcessor(adict, self.transmit, self.headers, self.targets)
 
         # Connection
         self.soc_ctrl = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.soc_ctrl.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.soc_ctrl.bind((IP_2, SOC_PORT_CTRL))
+        my_ip = socket.gethostbyname('')
+        self.soc_ctrl.bind((my_ip, SOC_PORT_CTRL))
         self.log.debug('[MAIN THREAD] connecting...')
-        self.soc_ctrl.connect((IP_1,SOC_PORT_CTRL))
+        self.soc_ctrl.connect((ip,SOC_PORT_CTRL))
         self.log.info('[MAIN THREAD] Client connected to server')
-
-    def __enter__(self):
-        return self
 
     def define_headers(self):
         head = {}
@@ -68,7 +67,6 @@ class LightClient(object):
         targ['system'] = ['system']
         targ['process'] = adict['processes']
         self.targets = targ
-        #print targ
 
     def start_record(self):
         self.log.debug('[MAIN THREAD] Asking server to start recording')
@@ -81,23 +79,28 @@ class LightClient(object):
         self.log.info('[MAIN THREAD] Server asked to stop recording')
 
     def start_receive(self):
-        self.receiving = True
-        self.log.debug('[MAIN THREAD] Asking server to start sending')
-        send_data(self.soc_ctrl,START_SEND)
-        self.log.info('[MAIN THREAD] Server asked to start sending')
-        self.data_client.start()
-        self.log.debug("[MAIN THREAD] DATA THREAD started")
+        if not self.receiving:
+            self.receiving = True
+            self.log.debug('[MAIN THREAD] Asking server to start sending')
+            send_data(self.soc_ctrl,START_SEND)
+            self.log.info('[MAIN THREAD] Server asked to start sending')
+            self.data_client.start()
+            self.log.debug("[MAIN THREAD] DATA THREAD started")
+        else:
+            self.log.warn("[MAIN THREAD] Asked to start receiving while already receiving")
 
     def stop_receive(self):
-        self.log.debug('[MAIN THREAD] Asking server to stop sending')
-        send_data(self.soc_ctrl, STOP_SEND)
-        self.log.info("[MAIN THREAD] Asked server to stop receiving")
-        # Not ask data client to stop. It should stop with server
-        # channel closing.
-        self.receiving = False
+        if self.receiving:
+            self.log.debug('[MAIN THREAD] Asking server to stop sending')
+            send_data(self.soc_ctrl, STOP_SEND)
+            self.log.info("[MAIN THREAD] Asked server to stop receiving")
+            # Not ask data client to stop. It should stop with server
+            self.receiving = False
+        else:
+            self.log.warn("[MAIN THREAD] Asked to stop receiving while already receiving")
 
-    def start_store(self, dirname):
-        self.data_processor.start_store(dirname)
+    def start_store(self, dirname = LOCAL_DATA_DIR):
+        return self.data_processor.start_store(dirname)
 
     def stop_store(self):
         self.data_processor.stop_store()
@@ -120,9 +123,6 @@ class LightClient(object):
         self.stop_process()
         send_data(self.soc_ctrl, STOP_ALL)
 
-    def __exit__(self, type, value, traceback):
-        self.log.info('[MAIN THREAD] Disinstantiate client. Closing control socket')
-        self.soc_ctrl.close()
 
 def parserArguments(parser):
     parser.add_argument('--proc' , dest = 'processes', nargs='*', default = [], help = 'processes to watch')
@@ -130,6 +130,8 @@ def parserArguments(parser):
     parser.add_argument('--step' , dest = 'step', type = int, default = '1' , help = 'period of recording in seconds')
     parser.add_argument('--rec' , dest = 'rec', nargs='*', default = ['local', 'remote'] , help = 'record mode, can be local or remote')
     parser.add_argument('--verbose', '-v' , dest = 'v', type = int, default = V_INFO , help = 'record mode, can be local or remote')
+    parser.add_argument('--ip', '-i' , dest = 'ip', type = str, default = None , help = 'ip to connect to')
+
 
 remote_commands = {
     'start record\n'  : START_RECORD,
@@ -151,40 +153,45 @@ if __name__ == '__main__':
     parserArguments(parser)
     args = parser.parse_args()
     adict = vars(args)
+    if adict['ip']:
+        ip = adict['ip']
+    else:
+        ip = IP_1
+
     print 'Arguments parsed'
-    with LightClient(adict) as client:
-        client.log.info('Client created')
-        while sys.stdin in select.select([sys.stdin], [], [], 1000)[0]:
-            line = sys.stdin.readline()
-            if line:
-                if line =='start send\n':
-                    client.start_receive()
-                elif line == 'stop send\n':
-                    client.stop_receive()
-                elif line == 'stop\n':
-                    client.stop_all()
-                    break
-                elif line == 'start record\n':
-                    send_data(client.soc_ctrl, remote_commands[line])
-                elif line == 'stop record\n':
-                    send_data(client.soc_ctrl, remote_commands[line])
-                elif line == 'print\n':
-                    client.start_print()
-                elif line == "start store\n":
-                    client.start_store('easy_client')
-                elif line == "stop store\n":
-                    client.stop_store()
-                elif line == "quit\n":
-                    client.stop_all()
-                    break
-                else:
-                    print 'wrong command argument'
-            else: # an empty line means stdin has been closed
-                print('eof')
-                sys.exit(0)
-        else:
-            print 'Exit because of user inaction'
-        print 'line ={} /'.format(line)
+    client = LightClient(ip, adict)
+    #client.log.info('Client created')
+    while sys.stdin in select.select([sys.stdin], [], [], 1000)[0]:
+        line = sys.stdin.readline()
+        if line:
+            if line =='start send\n':
+                client.start_receive()
+            elif line == 'stop send\n':
+                client.stop_receive()
+            elif line == 'stop\n':
+                client.stop_all()
+                break
+            elif line == 'start record\n':
+                send_data(client.soc_ctrl, remote_commands[line])
+            elif line == 'stop record\n':
+                send_data(client.soc_ctrl, remote_commands[line])
+            elif line == 'print\n':
+                client.start_print()
+            elif line == "start store\n":
+                client.start_store('easy_client')
+            elif line == "stop store\n":
+                client.stop_store()
+            elif line == "quit\n":
+                client.stop_all()
+                break
+            else:
+                print 'wrong command argument'
+        else: # an empty line means stdin has been closed
+            print('eof')
+            sys.exit(0)
+    else:
+        print 'Exit because of user inaction'
+    print 'line ={} /'.format(line)
         #client.stop_store()
         #client.stop_receive()
         #send_data(client.soc_ctrl, remote_commands[line])

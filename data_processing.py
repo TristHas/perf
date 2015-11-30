@@ -102,6 +102,8 @@ class DataProcessor(object):
     ####
 
     def process_store(self, dico):
+        print dico
+        print self.files
         for target in self.files:
             res = [dico[target][data_field] for data_field in dico[target]]
             print >> self.files[target], list_to_csv(res)
@@ -138,6 +140,7 @@ class DataProcessor(object):
         # Ask start storing
         self.local_store = True
         self.log.debug('[MAIN THREAD] End start local')
+        return [os.path.join(directory, instance) for instance in self.files]
 
     def stop_store(self):
         self.log.info('[MAIN THREAD] Stopping storage')

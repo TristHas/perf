@@ -13,7 +13,6 @@ class DataManager(object):
         self.timeout = int(adict['timeout'] / self.step)
 
         self.log = Logger(DATA_LOG_FILE, adict['v'])
-
         self.run = True
 
         self.targets = ['system'] + adict['processes']
@@ -49,7 +48,7 @@ class DataManager(object):
     def init_connection(self):
         soc_data = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         soc_data.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        soc_data.bind((SOC_ADR_REMOTE, SOC_PORT_DATA))
+        soc_data.bind(('', SOC_PORT_DATA))
         soc_data.listen(1)
         self.log.info('[INIT THREAD] Waiting for a connection')
         connection, client_address = soc_data.accept()

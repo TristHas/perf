@@ -8,13 +8,15 @@ from conf import *
 DATA_CLIENT_LOG_FILE = os.path.join(LOCAL_DATA_DIR, 'data_client.log')
 
 class DataClient(object):
-    def __init__(self, adict, queue, ip = None):
+    def __init__(self, adict, queue, ip):
         if not os.path.isdir(LOCAL_DATA_DIR):
             os.makedirs(LOCAL_DATA_DIR)
         self.log = Logger(DATA_CLIENT_LOG_FILE, adict['v'])
         self.log.info('Instantiatie data_client')
         self.transmit = queue
         self.receiving = False
+        self.remote_ip = ip
+        self.my_ip = socket.gethostbyname(socket.gethostname())
         # Headers could be used to check structure integrity of received data
         # Data integrity check put in data_processor
         # self.headers = None
@@ -22,9 +24,9 @@ class DataClient(object):
     def start(self):
         self.soc_data = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.soc_data.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.soc_data.bind((IP_2, SOC_PORT_DATA))
+        self.soc_data.bind((self.my_ip, SOC_PORT_DATA))
         self.log.debug('[MAIN THREAD] Connecting to server data channel')
-        self.soc_data.connect((SOC_ADR_REMOTE,SOC_PORT_DATA))
+        self.soc_data.connect((self.remote_ip,SOC_PORT_DATA))
         self.log.info('[MAIN THREAD] Data Channel Connected')
         self.data_receive = threading.Thread(target = self.receive, args = ())
         self.log.info('[MAIN THREAD] Starting DATA THREAD')
@@ -52,11 +54,8 @@ class DataClient(object):
                 self.log.info('[DATA THREAD] Empty data received. Closing socket ')
                 self.soc_data.close()
                 break
+
         if not self.receiving:
             self.log.info('[DATA THREAD] self.receiving is False. Closing socket ')
             self.soc_data.close()
-        #
-        #self.transmit.put('end')# Not sure we should communicate like that
-        #
-        #self.receiving = False
         self.log.info('[DATA THREAD] Exiting thread \n')
