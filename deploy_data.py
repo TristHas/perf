@@ -5,15 +5,6 @@ from fabric.api import run, cd, env, put, get
 import argparse, time
 from conf import *
 
-def init_server_session(ip = IP_1, no_run = False):
-    deploy_server(ip)
-    if not no_run:
-        run_server(ip)
-        print 'Has run server'
-    else:
-        print 'not running server'
-    time.sleep(2)       # Give time to server for launch
-
 def deploy_server(ip = IP_1):
     env.user        = LOGIN
     env.password    = PWD
@@ -37,6 +28,8 @@ def run_server(ip = IP_1):
     env.password    = PWD
     env.host_string = ip
     run('python /home/nao/bench_dialog/record_server.py < /dev/null > /dev/null 2>&1 &', pty = False)
+    print 'Has run server'
+    time.sleep(2)
 
 def kill_server(ip = IP_1):
     env.user        = LOGIN
@@ -81,14 +74,15 @@ if __name__ == '__main__':
         # FIXME: To be changed to handle multiple deploy IPs
         env.host_string = adict['ip'][0]
 
-    if adict['deploy']:
-        deploy_server()
-    if adict['run']:
-        run_server()
     if adict['kill']:
         kill_server()
     if adict['clean']:
         clean_server()
+    if adict['deploy']:
+        deploy_server()
+    if adict['run']:
+        run_server()
+
     if not (adict['clean'] or adict['kill'] or adict['deploy'] or adict['run']):
         parser.error("""Please specify valid options to the script.
                         You can display options function with -h""")

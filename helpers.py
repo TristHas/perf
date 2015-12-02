@@ -6,7 +6,6 @@ from conf import *
 class Logger():
     def __init__(self, filename, level = V_INFO, real_time = True):
         self.lev = level
-        print 'result open'
         self.file = open(filename, 'w')
         self.real_time = real_time
 
@@ -21,8 +20,6 @@ class Logger():
     def warn(self, mess):
         if self.lev >= V_WARN:
             message = "[W]{}:{}\n".format(time.time(), mess)
-            print 'result write'
-            print self.file.write(message)
             if self.real_time:
                 self.file.flush()
                 os.fsync(self.file)

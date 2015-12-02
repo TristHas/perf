@@ -3,10 +3,9 @@
 #from functionaltools import ssh_tools
 
 from conf import *
-from deploy_data import init_server_session, clean_server
 from easy_client import LightClient
 from fabric.api import env
-import argparse, os, time, json
+import argparse, os, time, json, csv
 
 def _get_result_data():
     if not os.path.isdir(LOCAL_DATA_DIR):
@@ -59,7 +58,6 @@ class RemoteCPUWatch(object):
         self.client.stop_store()
         self.store = False
         if not self.check_action():
-            print 'actions checked positive'
             self.client.stop_process()
             self.receive = False
             self.record = False
@@ -68,7 +66,18 @@ class RemoteCPUWatch(object):
         return self.printer or self.store
 
     def get_data(self, target, field):
-        pass
+        try:
+            for files in self.files:
+                if os.path.basename(files) == target:
+                    with open(files) as csvfile:
+                        reader = csv.DictReader(csvfile)
+                        result = []
+                        for row in reader:
+                            result.append(row[field])
+                        return result
+        except AttributeError:
+            return None
+
 
 
 def parserArguments(parser):
@@ -90,14 +99,17 @@ if __name__ == '__main__':
     args = parser.parse_args()
     adict = vars(args)
 
-    for key in adict:
-        print '{key}:{value}'.format(key= str(key), value = adict[key])
+    cpu = RemoteCPUWatch(ip = '10.0.132.103')
+    cpu.start_store()
+    time.sleep(5)
+    print 'Done'
+    cpu.stop_store()
+    print cpu.get_data('system','load')
+    print cpu.get_data('system','lavg_15')
+    print cpu.get_data('system','MemFree')
+    print cpu.get_data('system','nice_time')
 
-    with RemoteCPUWatch(ip = '10.0.132.32') as cpu:
-        print 'cpu started'
-        #cpu.start_display()
-        cpu.start_store()
-        print 'actions started'
-        time.sleep(30)
-        print 'Done'
-
+    print cpu.get_data('naoqi-service','time')
+    print cpu.get_data('naoqi-service','VmSize')
+    print cpu.get_data('naoqi-service','VmRSS')
+    print cpu.get_data('naoqi-service','Threads')

@@ -19,7 +19,6 @@ class DataProcessor(object):
         self.transmit = queue
         self.headers = headers
         self.targets = targets
-
         # print data
         self.printing = False
         self.base_data = None
@@ -28,7 +27,6 @@ class DataProcessor(object):
         # store data
         self.local_store = False
         self.files = {}
-
         # Launching Thread
         self.thr = threading.Thread(target = self.process, args = (), name = 'process_thread')
         self.start()
@@ -36,7 +34,6 @@ class DataProcessor(object):
     ###
     ###     Process Thread
     ###
-
     def start(self):
         self.log.info('[MAIN THREAD] Starting process thread')
         self.thr.start()
@@ -96,19 +93,14 @@ class DataProcessor(object):
             for data_field in dico[target]:
                 # Easy to handle data sequence length here
                 self.base_data[target][data_field].append(dico[target][data_field])
-
     ####
     ####        Storage utilities
     ####
-
     def process_store(self, dico):
-        print dico
-        #print self.files
         for target in self.files:
             res = [dico[target][data_field] for data_field in dico[target]]
             print >> self.files[target], list_to_csv(res)
             self.log.debug('[PROCESS THREAD] Stored {}'.format(list_to_csv(res)))
-
 
     def start_store(self, dirname = None):
         # Make record dir
@@ -123,14 +115,12 @@ class DataProcessor(object):
             shutil.rmtree(directory)
         os.makedirs(directory)
         self.log.debug('[MAIN THREAD] Made local record dir')
-
         # Open files
         for types in self.targets:
             for instance in self.targets[types]:
                 filename = os.path.join(directory, instance)
                 self.files[instance] = open(filename, 'w')
                 self.log.debug('[MAIN THREAD] Opened {}'.format(filename))
-
         # Write headers
         for key in self.files:
             if key == 'system':
@@ -139,7 +129,6 @@ class DataProcessor(object):
             else:
                 print >> self.files[key], list_to_csv(self.headers['process'])
                 self.log.debug('[MAIN THREAD] wrote {}'.format(list_to_csv(self.headers['process'])))
-
         # Ask start storing
         self.local_store = True
         self.log.debug('[MAIN THREAD] End start local')

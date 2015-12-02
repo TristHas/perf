@@ -34,7 +34,6 @@ class LightClient(object):
 
         # Logging
         self.log = Logger(CLIENT_LOG_FILE, adict['v'])
-        print CLIENT_LOG_FILE
         self.log.info('[MAIN THREAD] Instantiated client')
         self.log.debug(adict)
 
