@@ -39,6 +39,7 @@ class DataClient(object):
         self.log.info("[MAIN THREAD] Asked DATA THREAD to stop receiving")
 
     def receive(self):
+        #FIXME_1 : recv_data is blocking. If nothing is sent and asked to stop, it will block program exit
         while self.receiving:
             self.log.debug('[DATA THREAD] waiting for data from server')
             data = recv_data(self.soc_data)

@@ -15,27 +15,22 @@ def _get_result_data():
     get(nao_data_files, LOCAL_DATA_DIR)
 
 class RemoteCPUWatch(object):
-    def __init__(self, ip = None):
-        if ip:
-            self.ip = ip
-            env.host_string = ip
-        else:
-            self.ip = REMOTE_IP_DEF
-        init_server_session(self.ip)
-        self.client = LightClient(self.ip)
+    def __init__(self, ip):
+        self.ip = ip
+        self.client = LightClient(ip = self.ip)
         self.record = False
         self.receive = False
         self.printer = False
         self.store = False
         self.files = []
 
-    def __enter__(self):
-        return self
-
     def start_display(self):
-        self.client.start_record()
-        self.client.start_receive()
-        self.client.start_print()
+        if not self.record:
+            self.client.start_record()
+        if not self.receive:
+            self.client.start_receive()
+        if not self.printer:
+            self.client.start_print()
         self.record = True
         self.receive = True
         self.printer = True
@@ -50,9 +45,12 @@ class RemoteCPUWatch(object):
             self.record = False
 
     def start_store(self):
-        self.client.start_record()
-        self.client.start_receive()
-        self.files = self.client.start_store()
+        if not self.record:
+            self.client.start_record()
+        if not self.receive:
+            self.client.start_receive()
+        if not self.store:
+            self.files = self.client.start_store()
         self.store = True
         self.record = True
         self.receive = True
@@ -61,22 +59,17 @@ class RemoteCPUWatch(object):
         self.client.stop_store()
         self.store = False
         if not self.check_action():
-            self.client.stop_receive()
+            print 'actions checked positive'
+            self.client.stop_process()
             self.receive = False
-            self.client.stop_record()
             self.record = False
 
     def check_action(self):
         return self.printer or self.store
 
-    def get_data(self):
+    def get_data(self, target, field):
         pass
 
-    def __exit__(self, type, value, traceback):
-        self.stop_display()
-        self.stop_store()
-        self.client.stop_all()
-        clean_server()
 
 def parserArguments(parser):
     parser.add_argument('--proc' , dest = 'proc', nargs='*',
@@ -89,7 +82,6 @@ def parserArguments(parser):
         default = ['local', 'remote'] , help = 'record mode, can be local or remote')
     parser.add_argument('--verbose', '-v' , dest = 'v', type = int,
         default = 1 , help = 'verbosity level')
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -108,14 +100,4 @@ if __name__ == '__main__':
         print 'actions started'
         time.sleep(30)
         print 'Done'
-
-
-
-
-
-
-
-
-
-
 

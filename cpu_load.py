@@ -32,6 +32,8 @@ class CPUWatcher(object):
         self.load = 0
         self.proc = dict()
         non_valid_processes = []
+        print 'targets'
+        print targets
         for process in targets['process']:
             pid = self._get_pid(process)
             if pid:
@@ -71,7 +73,9 @@ class CPUWatcher(object):
 
     # init helpers
     def _get_pid(self, process):
+        print 'ps aux | grep {}'.format(process)
         ps_result = os.popen('ps aux | grep {}'.format(process)).readlines()
+        print ps_result
         tmp = []
         for res in ps_result:
             if '--proc' in res:

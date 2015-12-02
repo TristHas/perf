@@ -28,12 +28,13 @@ import time, sys, argparse
 ### Sync data thread
 
 class LightClient(object):
-    def __init__(self, ip, adict = {'v': V_INFO, 'processes':['naoqi-service']}):
+    def __init__(self, ip, adict = {'v': V_DEBUG, 'processes':['naoqi-service']}):
         if not os.path.isdir(LOCAL_DATA_DIR):
             os.makedirs(LOCAL_DATA_DIR)
 
         # Logging
         self.log = Logger(CLIENT_LOG_FILE, adict['v'])
+        print CLIENT_LOG_FILE
         self.log.info('[MAIN THREAD] Instantiated client')
         self.log.debug(adict)
 
@@ -90,7 +91,7 @@ class LightClient(object):
                 self.log.error('[MAIN THREAD] Client tried to receive but server denied it')
             else:
                 self.data_client.start()
-                self.log.error('[MAIN THREAD] Client is receiving')
+                self.log.info('[MAIN THREAD] Client is receiving')
             self.log.debug("[MAIN THREAD] DATA THREAD started")
         else:
             self.log.warn("[MAIN THREAD] Asked to start receiving while already receiving")
@@ -104,7 +105,7 @@ class LightClient(object):
         else:
             self.log.warn("[MAIN THREAD] Asked to stop receiving while already receiving")
 
-    def start_store(self, dirname = LOCAL_DATA_DIR):
+    def start_store(self, dirname = 'easy_client'):
         return self.data_processor.start_store(dirname)
 
     def stop_store(self):
@@ -167,7 +168,6 @@ if __name__ == '__main__':
 
     print 'Arguments parsed'
     client = LightClient(ip, adict)
-    #client.log.info('Client created')
     while sys.stdin in select.select([sys.stdin], [], [], 1000)[0]:
         line = sys.stdin.readline()
         if line:
@@ -189,19 +189,15 @@ if __name__ == '__main__':
                 client.start_print()
             elif line == "stop print\n":
                 client.stop_print()
-
             elif line == "quit\n":
                 client.stop_process()
                 break
             else:
                 print 'wrong command argument'
-        else: # an empty line means stdin has been closed
+        else:
             print('eof')
             sys.exit(0)
     else:
         client.stop_process()
         print 'Exit because of user inaction'
     print 'line ={} /'.format(line)
-        #client.stop_store()
-        #client.stop_receive()
-        #send_data(client.soc_ctrl, remote_commands[line])

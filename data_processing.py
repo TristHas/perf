@@ -112,10 +112,13 @@ class DataProcessor(object):
 
     def start_store(self, dirname = None):
         # Make record dir
-        if dirname is None:
+        if not dirname:
+            print 'dirname is none'
             dirname = time.time()
+        print dirname
         self.log.info('[MAIN THREAD] Starting local storage')
         directory = os.path.join(LOCAL_DATA_DIR, dirname)
+        print "directory = " + directory
         if os.path.isdir(directory):
             shutil.rmtree(directory)
         os.makedirs(directory)
