@@ -98,16 +98,20 @@ class DataProcessor(object):
     ####
     def process_store(self, dico):
         for target in self.files:
-            res = [dico[target][data_field] for data_field in dico[target]]
+            try:
+                if target == 'system':
+                    res = [dico[target][data_field] for data_field in self.headers['system']]
+                else:
+                    res = [dico[target][data_field] for data_field in self.headers['process']]
+            except AttributeError:
+                res = range(len(dico))
             print >> self.files[target], list_to_csv(res)
             self.log.debug('[PROCESS THREAD] Stored {}'.format(list_to_csv(res)))
 
     def start_store(self, dirname = None):
         # Make record dir
         if not dirname:
-            print 'dirname is none'
             dirname = time.time()
-        print dirname
         self.log.info('[MAIN THREAD] Starting local storage')
         directory = os.path.join(LOCAL_DATA_DIR, dirname)
         print "directory = " + directory
@@ -125,9 +129,11 @@ class DataProcessor(object):
         for key in self.files:
             if key == 'system':
                 print >> self.files[key], list_to_csv(self.headers['system'])
+                print self.headers['system']
                 self.log.debug('[MAIN THREAD] wrote {}'.format(list_to_csv(self.headers['system'])))
             else:
                 print >> self.files[key], list_to_csv(self.headers['process'])
+                print self.headers['process']
                 self.log.debug('[MAIN THREAD] wrote {}'.format(list_to_csv(self.headers['process'])))
         # Ask start storing
         self.local_store = True

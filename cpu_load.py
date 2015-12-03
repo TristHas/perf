@@ -207,15 +207,15 @@ class CPUWatcher(object):
             "cstime":tmp[5],
             "majflt":tmp[0],
             "majcfault":tmp[1],
-            "time": sum(tmp[2:])
+            #"time": sum(tmp[2:])
         }
         try:
             for key in PROC_CPU_DATA:
-                if key == 'time':
-                    res[key] = tmp_proc_cpu[key] - self.proc[process]['prev_cpu'][key] / sys_time
-                else:
-                    res[key] = tmp_proc_cpu[key] - self.proc[process]['prev_cpu'][key] # divide by proc time
-                self.proc[process]['prev_cpu'][key] = tmp_proc_cpu[key]
+                if key != 'time':
+                    res[key] = tmp_proc_cpu[key] - self.proc[process]['prev_cpu'][key] # divide by proc time?
+                    self.proc[process]['prev_cpu'][key] = tmp_proc_cpu[key]
+            res['time'] = (res['utime'] + res['stime']) / sys_time
+
         except KeyError as e:
             print "key error {}".format(e.message)
         return res
