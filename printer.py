@@ -1,5 +1,5 @@
 import numpy as np
-import time
+import time, csv
 import matplotlib
 #matplotlib.use('GTKAgg')
 from matplotlib import pyplot as plt
@@ -143,7 +143,7 @@ def init_print(dico):
     plt.ion()
     log.verb('Print init data: {}'.format(dico))
     n_elem = len(dico)
-    log.debug('len({})={}'.format(target, n_elem))
+    log.debug('len({})={}'.format(dico, n_elem))
     n_col = N_COL
     if n_elem % n_col == 0:
         n_raw = int(n_elem / n_col)
@@ -252,15 +252,12 @@ def test_print_time():
             multi_print_dic(multi_dic, ax, fig)
             stop = time.time()
             print stop - start
-
     raw_input()
 
 def print_file(file_path):
     with open(file_path) as csvfile:
         reader = csv.DictReader(csvfile)
-        result = []
-        fig, ax = multi_init_print()
-        if os.path.basename(files) == 'system':
+        if os.path.basename(file_path) == 'system':
             headers = SYS_CPU_OTHER + LOAD_AVG + SYS_CPU_DATA + SYS_MEM_DATA
         else:
             headers =PROC_CPU_DATA + PROC_MEM_DATA
@@ -268,11 +265,14 @@ def print_file(file_path):
         print_data = {}
         for elem in headers:
             print_data[elem] = []
-            for row in reader:
+        print headers
+        for row in reader:
+            for elem in headers:
                 print_data[elem].append(row[elem])
+        for elem in headers:
             print 'print_data[{}]={}'.format(elem,print_data[elem])
         print_dic(print_data, ax, fig)
+        time.sleep(20)
 
 if __name__ == '__main__':
-    log.real_time = False
-    test_print_time()
+    print_file('/Users/d-fr-mac0002/Desktop/dialog/projects/perf/data/easy_client/naoqi-service')
