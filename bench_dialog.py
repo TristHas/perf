@@ -79,7 +79,6 @@ class RemoteCPUWatch(object):
             return None
 
 
-
 def parserArguments(parser):
     parser.add_argument('--proc' , dest = 'proc', nargs='*',
         default = [], help = 'processes to watch')
@@ -108,7 +107,6 @@ if __name__ == '__main__':
     print cpu.get_data('system','lavg_15')
     print cpu.get_data('system','MemFree')
     print cpu.get_data('system','nice_time')
-
     print cpu.get_data('naoqi-service','time')
     print cpu.get_data('naoqi-service','VmSize')
     print cpu.get_data('naoqi-service','VmRSS')

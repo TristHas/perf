@@ -255,6 +255,24 @@ def test_print_time():
 
     raw_input()
 
+def print_file(file_path):
+    with open(file_path) as csvfile:
+        reader = csv.DictReader(csvfile)
+        result = []
+        fig, ax = multi_init_print()
+        if os.path.basename(files) == 'system':
+            headers = SYS_CPU_OTHER + LOAD_AVG + SYS_CPU_DATA + SYS_MEM_DATA
+        else:
+            headers =PROC_CPU_DATA + PROC_MEM_DATA
+        fig, ax = init_print(headers)
+        print_data = {}
+        for elem in headers:
+            print_data[elem] = []
+            for row in reader:
+                print_data[elem].append(row[elem])
+            print 'print_data[{}]={}'.format(elem,print_data[elem])
+        print_dic(print_data, ax, fig)
+
 if __name__ == '__main__':
     log.real_time = False
     test_print_time()
