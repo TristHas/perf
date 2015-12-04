@@ -35,6 +35,7 @@ def define_targets():
 
 #def update_server_state(data_manager):
 
+connection_table = {}
 
 def treat_data(data, connection, cpu, data_manager, server_state):
     if data == START_RECORD:
@@ -164,7 +165,12 @@ if __name__ == '__main__':
                     log.info('[SERV PROC] New connection made by client {}'.format(client_address))
                     connection.setblocking(0)
                     inputs.append(connection)
-
+                    if client_address not in connection_table:
+                        connection_table[client_address] = []
+                        log.verbose('[SERV PROC] Client address {} added to connection_table'.format(client_address))
+                    else:
+                        log.warn('[SERV PROC] Client address {} already in connection_table'.format(client_address))
+                    log.debug('[SERV PROC] connection_table is now {}'.format(connection_table))
                 else:
                     data = s.recv(1024)
                     log.debug('[SERV PROC] {} received {}'.format(s.getpeername(), data))
@@ -175,6 +181,10 @@ if __name__ == '__main__':
                         outputs.append(s)
                     else:
                         log.info('[SERV PROC] Received empty data on {}. Closing connection'.format(connection.getpeername() if connection is not server else 'server'))
+                        if connection.getpeername() in connection_table:
+                            del connection_table[connection.getpeername()]
+                            log.info('[SERV PROC] Received empty data on {}. Closing connection')
+
                         if s in outputs:
                             outputs.remove(s)
                         inputs.remove(s)
@@ -188,6 +198,5 @@ if __name__ == '__main__':
     finally:
         log.info('[SERV PROC] end of server main loop')
         server.close()
-
 
 

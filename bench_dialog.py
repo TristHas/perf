@@ -43,13 +43,13 @@ class RemoteCPUWatch(object):
             self.client.stop_record()
             self.record = False
 
-    def start_store(self):
+    def start_store(self, dirname = 'remote_cpu'):
         if not self.record:
             self.client.start_record()
         if not self.receive:
             self.client.start_receive()
         if not self.store:
-            self.files = self.client.start_store()
+            self.files = self.client.start_store(dirname = dirname)
         self.store = True
         self.record = True
         self.receive = True
