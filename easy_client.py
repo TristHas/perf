@@ -70,14 +70,16 @@ class LightClient(object):
         targ['process'] = adict['processes']
         self.targets = targ
 
-    def start_record(self):
+    def start_record(self, target, name):
         self.log.debug('[MAIN THREAD] Asking server to start recording')
-        send_data(self.soc_ctrl,START_RECORD)
+        msg = MSG_SEP.join([START_RECORD, target, name])
+        send_data(self.soc_ctrl,msg)
         self.log.info('[MAIN THREAD] Server asked to start recording')
 
-    def stop_record(self):
+    def stop_record(self, target, name):
         self.log.debug('[MAIN THREAD] Asking server to stop recording')
-        send_data(self.soc_ctrl,STOP_RECORD)
+        msg = MSG_SEP.join([START_RECORD, target, name])
+        send_data(self.soc_ctrl,msg)
         self.log.info('[MAIN THREAD] Server asked to stop recording')
 
     def start_receive(self):
@@ -175,9 +177,9 @@ if __name__ == '__main__':
             elif line == 'stop send\n':
                 client.stop_receive()
             elif line == 'start record\n':
-                client.start_record()
+                client.start_record('system', 'system')
             elif line == 'stop record\n':
-                client.stop_record()
+                client.stop_record('system', 'system')
             elif line == 'print\n':
                 client.start_print()
             elif line == "start store\n":

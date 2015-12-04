@@ -25,7 +25,7 @@ PROC_MEM_DATA   = ["VmSize","VmPeak","VmStk","VmRSS", "Threads"]
 ###     Net communication
 ###
 # ubuntu "192.168.0.15"
-IP_1            = "10.0.132.103"
+IP_1            = "10.0.132.205"
 IP_2            = "10.0.128.144"
 SOC_ADR_REMOTE  = IP_1
 SOC_ADR_LOC     = IP_2
@@ -75,6 +75,7 @@ START_STORE     = '5'
 STOP_STORE      = '6'
 FAIL            = 'fail'
 SYNC            = 'sync'
+MSG_SEP         = '&&&'
 
 ###
 ###     Server state

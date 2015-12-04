@@ -12,7 +12,7 @@ def parserArguments(parser):
     parser.add_argument('--tout' , dest = 'timeout', type = int, default = '10000' , help = 'timeout in seconds')
     parser.add_argument('--step' , dest = 'step', type = int, default = '1' , help = 'period of recording in seconds')
     parser.add_argument('--rec' , dest = 'rec', nargs='*', default = ['local', 'remote'] , help = 'record mode, can be local or remote')
-    parser.add_argument('--verbose', '-v' , dest = 'v', type = int, default = V_DEBUG , help = 'record mode, can be local or remote')
+    parser.add_argument('--verb', '-v' , dest = 'v', type = int, default = V_DEBUG , help = 'record mode, can be local or remote')
 
 target_type = ('system', 'process')
 
@@ -38,20 +38,35 @@ def define_targets():
 connection_table = {}
 
 def treat_data(data, connection, cpu, data_manager, server_state):
-    if data == START_RECORD:
-        if server_state == STATE_IDLE:
-            cpu.start()
-            server_state = STATE_RECORD
+    if data.startswith(START_RECORD):
+        client_address = connection.getpeername()
+        if connection in connection_table:
+            msg = data.split(MSG_SEP)
+            log.debug('[SERV PROC] Received msg {} from {}'.format(msg, client_address))
+            connection_table[connection].append(msg[2])
+            cpu.start()                                                 ### Got to do smt else here
+            server_state = STATE_RECORD                                 ### Got to do smt else here
             return server_state, SYNC
         else:
-            return server_state, SYNC
+            log.error('[SERV PROC] {} Asked to start recording while not in connection table'.format(connection.getpeername()))
+            return server_state, FAIL
 
-    elif data == STOP_RECORD:
-        if server_state <= STATE_RECORD:
-            cpu.stop()
-            server_state = STATE_IDLE
-            return server_state, SYNC
+    elif data.startswith(STOP_RECORD):
+        client_address = connection.getpeername()
+        if connection in connection_table:
+            msg = data.split(MSG_SEP)
+            log.debug('[SERV PROC] Received msg {}'.format(msg))
+            if msg[2] in connection_table[connection]:
+                log.verb('[SERV PROC] Received msg {}'.format(msg))
+                connection_table[connection].remove(msg[2])
+                cpu.stop()
+                server_state = STATE_RECORD
+                return server_state, SYNC
+            else:
+                log.warn('[SERV PROC] {} Asked to stop record {} while not recording. Actual recordings are {}'.format(client_address, msg, connection_table[connection]))
+                return server_state, SYNC
         else:
+            log.error('[SERV PROC] {} Asked to start recording while not in connection table'.format(connection.getpeername()))
             return server_state, FAIL
 
     elif data == START_SEND:
@@ -158,16 +173,15 @@ if __name__ == '__main__':
             log.debug('[SERV PROC] Select triggered. readable: {} , writable: {}, exceptional: {}'.format([r.getpeername() if r is not server else 'server' for r in readable ],
                                                                                                           [w.getpeername() if w is not server else 'server'for w in writable],
                                                                                                           [e.getpeername() if e is not server else 'server' for e in exceptional]))
-
             for s in readable:
                 if s is server:
                     connection, client_address = s.accept()
                     log.info('[SERV PROC] New connection made by client {}'.format(client_address))
                     connection.setblocking(0)
                     inputs.append(connection)
-                    if client_address not in connection_table:
-                        connection_table[client_address] = []
-                        log.verbose('[SERV PROC] Client address {} added to connection_table'.format(client_address))
+                    if connection not in connection_table:
+                        connection_table[connection] = []
+                        log.verb('[SERV PROC] Client address {} added to connection_table'.format(client_address))
                     else:
                         log.warn('[SERV PROC] Client address {} already in connection_table'.format(client_address))
                     log.debug('[SERV PROC] connection_table is now {}'.format(connection_table))
@@ -180,9 +194,9 @@ if __name__ == '__main__':
                         message_queues[s] = answer
                         outputs.append(s)
                     else:
-                        log.info('[SERV PROC] Received empty data on {}. Closing connection'.format(connection.getpeername() if connection is not server else 'server'))
-                        if connection.getpeername() in connection_table:
-                            del connection_table[connection.getpeername()]
+                        log.info('[SERV PROC] Received empty data on {}. Closing connection'.format([connection.getpeername() if connection is not server else 'server']))
+                        if connection in connection_table:
+                            del connection_table[connection]
                             log.info('[SERV PROC] Received empty data on {}. Closing connection')
 
                         if s in outputs:
