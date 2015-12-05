@@ -20,6 +20,7 @@ class Logger():
     def warn(self, mess):
         if self.lev >= V_WARN:
             message = "[W]{}:{}\n".format(time.time(), mess)
+            self.file.write(message)
             if self.real_time:
                 self.file.flush()
                 os.fsync(self.file)

@@ -23,53 +23,57 @@ class CPUWatcher(object):
         # Sync variables
         self.transmit = data
         self.run = True
-        self.keep_running = False
-        self.is_transmitting = False
 
         # Record var
         self.sys_prev_cpu = {key:0 for key in SYS_CPU_DATA}
         self.time = 0
         self.load = 0
         self.proc = dict()
-        non_valid_processes = []
-        print 'targets'
-        print targets
-        for process in targets['process']:
-            pid = self._get_pid(process)
-            if pid:
-                self.proc[process] = {
-                        'pid':pid,
-                        'prev_cpu':{key:0 for key in PROC_CPU_DATA},
-                    }
-            else:
-                non_valid_processes.append(process)
-                self.log.warn("Non valid process {}. Skipping this process".format(process))
-        targets['process'] = [proc for proc in targets['process'] if (proc not in non_valid_processes)]
-        self.log.info("Targets for record are {}".format(targets['process']))
 
-        self.thr_start = threading.Thread(target = self._launch_record, name = 'cpu_thread', args=(), kwargs=adict)
-        self.log.info('starting CPU Thread')
+        self.thr_start = threading.Thread(target = self.record_process, name = 'cpu_thread', args=(), kwargs={})
+        self.log.info('[MAIN THREAD] starting CPU Thread')
         self.thr_start.start()
-        self.log.debug('CPU Thread started')
+        self.log.debug('[MAIN THREAD] CPU Thread started')
 
     def quit(self):
-        self.stop()
+        #self.stop()
         self.run = False
 
-    def start(self):
+    def start(self, target):
         """
         Starts recording process async.
         """
         ## self.directory = os.path.join(NAO_DATA_DIR, time.ctime())
         ## os.makedirs(self.directory)
-        self.keep_running=True
+        if target == 'system':
+            self.proc['system'] = None
+            self.log.info('[MAIN THREAD] Start watching system')
+            return True
+        else:
+            pid = self._get_pid(target)
+            if pid:
+                self.proc[target] = {
+                        'pid':pid,
+                        'prev_cpu':{key:0 for key in PROC_CPU_DATA},
+                    }
+                return True
+            else:
+                self.log.error("Non valid process {}. Skipping this process".format(process))
+                return False
 
-    def stop(self):
+    def stop(self, target):
         """
         Stops the recording process
         """
-        self.keep_running = False
+        if target in self.proc:
+            del self.proc[target]
+            self.log.info('[MAIN THREAD] Has stopped {}'.format(target))
+            return_val = True
+        else:
+            self.log.error('[MAIN THREAD] Has been asked to stop {} while not recording'.format(target))
+            reurn_val = False
         time.sleep(self.step)
+        return return_val
 
     # init helpers
     def _get_pid(self, process):
@@ -90,51 +94,36 @@ class CPUWatcher(object):
             pid = ps_result[0].split()[1]
         return pid
 
-
-
     # record methods
     # refactor files should be handled by server data thread
     # only use transmission queue here
-    def _init_record(self):
-            self.is_transmitting = True
-
-    def _end_record(self):
-        self.transmit.put('end')
-        self.is_transmitting = False
-        self.log.info('[CPU THREAD] Has sent end command. Exiting')
 
     def _record(self, tmp):
         self.transmit.put(tmp)
         self.log.debug('[CPU Thread] Has put to queue {}'.format(tmp))
 
-    def _launch_record(self, **adict):
+    def record_process(self):
         self.log.debug('[CPU THREAD] In thread')
         count = 0                                                   # record loop var init
-        step = self.step
-        timeout = self.timeout
-        self._init_record()
-        self.log.debug('[CPU THREAD] Has init')
         while self.run:                # Timeout + stop() message
-            self.log.debug('[CPU THREAD] in loop')
-            if self.keep_running and count < timeout:
-                self.log.debug('[CPU THREAD] active state')
+            if count < self.timeout:
+                self.log.debug('[CPU THREAD] Processing')
                 tmp = {}
                 tme = self._get_time()                                  # sys time is used for several measures
                 keys = self.proc.keys()
-                keys.append('system')
                 for key in keys:
                     if key == 'system':
                         tmp[key] = self.get_sys_data(tme)
                     else:
                         tmp[key] = self.get_proc_data(tme, key)
-                self._record(tmp)
-                count += step
-                time.sleep(step)
+                if tmp:
+                    self._record(tmp)
+                count += self.step
+                time.sleep(self.step)
             else:
-                self.log.debug('[CPU THREAD] idle state')
+                self.log.warn('[CPU THREAD] Timeout happened, should we change code to stop process?')
                 time.sleep(1)
-        self._end_record()
-        print 'end of thread record'
+        print '[CPU THREAD] End of thread record'
 
     # record helpers
 

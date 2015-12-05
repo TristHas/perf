@@ -78,7 +78,7 @@ class LightClient(object):
 
     def stop_record(self, target, name):
         self.log.debug('[MAIN THREAD] Asking server to stop recording')
-        msg = MSG_SEP.join([START_RECORD, target, name])
+        msg = MSG_SEP.join([STOP_RECORD, target, name])
         send_data(self.soc_ctrl,msg)
         self.log.info('[MAIN THREAD] Server asked to stop recording')
 
@@ -177,9 +177,9 @@ if __name__ == '__main__':
             elif line == 'stop send\n':
                 client.stop_receive()
             elif line == 'start record\n':
-                client.start_record('system', 'system')
+                client.start_record('process', '/hud/window-stack-bridge')
             elif line == 'stop record\n':
-                client.stop_record('system', 'system')
+                client.stop_record('process', '/hud/window-stack-bridge')
             elif line == 'print\n':
                 client.start_print()
             elif line == "start store\n":

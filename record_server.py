@@ -28,12 +28,38 @@ def define_targets():
         'process':adict['processes'],
         }
 
-### Fix me: Stop_all message should check if any connection still exist and stop all if only the requesting one is still connected
-###
-###
-###
 
-#def update_server_state(data_manager):
+###
+###     FIXME: Send error message to the client when the process can't be found
+###
+def start_record(cpu, connection, target):
+    should_ask_start = True
+    for clients in connection_table:
+        if target in connection_table[clients]:
+            should_ask_start = False
+    log.debug('[SERV PROC] {} should_ask_start = {}'.format(connection.getpeername(), should_ask_start))
+    if should_ask_start:
+        should_append = cpu.start(target)
+    else:
+        should_append =  True
+    if should_append:
+        connection_table[connection].append(target)
+        log.debug('[SERV PROC] {} appended {}'.format(connection.getpeername(), target))
+
+def stop_record(cpu, connection, target):
+    should_ask_stop = True
+    for clients in connection_table:
+        if clients is not connection:
+            if target in connection_table[clients]:
+                should_ask_stop = False
+    log.debug('[SERV PROC] {} should_ask_stop = {}'.format(connection.getpeername(), should_ask_stop))
+    if should_ask_stop:
+        should_remove = cpu.stop(target)
+    else:
+        should_remove = True
+    if should_remove:
+        connection_table[connection].remove(target)
+        log.debug('[SERV PROC] {} removed {}'.format(connection.getpeername(), target))
 
 connection_table = {}
 
@@ -43,8 +69,10 @@ def treat_data(data, connection, cpu, data_manager, server_state):
         if connection in connection_table:
             msg = data.split(MSG_SEP)
             log.debug('[SERV PROC] Received msg {} from {}'.format(msg, client_address))
-            connection_table[connection].append(msg[2])
-            cpu.start()                                                 ### Got to do smt else here
+            if msg[2] not in connection_table[connection]:
+                start_record(cpu, connection, msg[2])
+            else:
+                log.warn('[SERV PROC] {} Asked to start record {} while already recording'.format(client_address, msg[2]))
             server_state = STATE_RECORD                                 ### Got to do smt else here
             return server_state, SYNC
         else:
@@ -58,8 +86,7 @@ def treat_data(data, connection, cpu, data_manager, server_state):
             log.debug('[SERV PROC] Received msg {}'.format(msg))
             if msg[2] in connection_table[connection]:
                 log.verb('[SERV PROC] Received msg {}'.format(msg))
-                connection_table[connection].remove(msg[2])
-                cpu.stop()
+                stop_record(cpu, connection, msg[2])
                 server_state = STATE_RECORD
                 return server_state, SYNC
             else:
@@ -194,16 +221,19 @@ if __name__ == '__main__':
                         message_queues[s] = answer
                         outputs.append(s)
                     else:
-                        log.info('[SERV PROC] Received empty data on {}. Closing connection'.format([connection.getpeername() if connection is not server else 'server']))
-                        if connection in connection_table:
-                            del connection_table[connection]
-                            log.info('[SERV PROC] Received empty data on {}. Closing connection')
-
+                        log.info('[SERV PROC] Received empty data. Closing connection')
+                        log.info('[SERV PROC] Connection  is  {}'.format(s))
+                        log.info('[SERV PROC] Connection table is now {}'.format(connection_table))
+                        if s in connection_table:
+                            for target in connection_table[s]:
+                                stop_record(cpu, s, target)
+                            del connection_table[s]
+                            log.debug('[SERV PROC] Connection has been closed')
                         if s in outputs:
                             outputs.remove(s)
                         inputs.remove(s)
                         s.close()
-                        log.debug('[SERV PROC] Remaining connections are {}.'.format([i.getpeername() if i is not server else 'server' for i in inputs]))
+                        log.debug('[SERV PROC] Remaining connections are {}.'.format(connection_table))
 
             for s in writable:
                 s.sendall(message_queues[s])

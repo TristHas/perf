@@ -6,7 +6,7 @@ import os
 # Ubuntu /home/tristan/workspace/perf
 LOCAL_WORK_DIR  = '/Users/d-fr-mac0002/Desktop/dialog/projects/perf'      #os.path.dirname(os.path.realpath("__file__"))
 LOCAL_DATA_DIR  = os.path.join(LOCAL_WORK_DIR, 'data')
-NAO_HOME        = "/home/nao"
+NAO_HOME        = "/home/tristan/remote"
 NAO_WORK_DIR    = os.path.join(NAO_HOME, 'bench_dialog')
 NAO_DATA_DIR    = os.path.join(NAO_HOME, 'bench_data')
 CSV_SEP         = ','
@@ -25,14 +25,11 @@ PROC_MEM_DATA   = ["VmSize","VmPeak","VmStk","VmRSS", "Threads"]
 ###     Net communication
 ###
 # ubuntu "192.168.0.15"
-IP_1            = "10.0.132.205"
-IP_2            = "10.0.128.144"
-SOC_ADR_REMOTE  = IP_1
-SOC_ADR_LOC     = IP_2
+IP_1            = "192.168.0.15"
 SOC_PORT_CTRL   = 6004
 SOC_PORT_DATA   = 6006
-LOGIN           = 'nao'
-PWD             = 'nao'
+LOGIN           = 'tristan'
+PWD             = 'Spaghett1'
 
 ###
 ###     Logging
