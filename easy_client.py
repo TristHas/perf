@@ -176,13 +176,29 @@ if __name__ == '__main__':
                 client.start_receive()
             elif line == 'stop send\n':
                 client.stop_receive()
-            elif line == 'start record\n':
-                client.start_record('process', '/hud/window-stack-bridge')
-            elif line == 'stop record\n':
-                client.stop_record('process', '/hud/window-stack-bridge')
+            elif line.startswith('start record'):
+                data = line.split()
+                if len(data) !=3:
+                    print 'Wrong input argument {}'.format(line)
+                else:
+                    if data[2] == 'system':
+                        client.start_record('system', 'system')
+                    else:
+                        client.start_record('process', data[2])
+
+            elif line.startswith('stop record'):
+                data = line.split()
+                if len(data) !=3:
+                    print 'Wrong input argument {}'.format(line)
+                else:
+                    if data[2] == 'system':
+                        client.stop_record('system', 'system')
+                    else:
+                        client.stop_record('process', data[2])
+
             elif line == 'print\n':
                 client.start_print()
-            elif line == "start store\n":
+            elif line =="start store\n":
                 client.start_store('easy_client')
             elif line == "stop store\n":
                 client.stop_store()

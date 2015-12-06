@@ -32,6 +32,7 @@ def define_targets():
 ###
 ###     FIXME: Send error message to the client when the process can't be found
 ###
+
 def start_record(cpu, connection, target):
     should_ask_start = True
     for clients in connection_table:
@@ -191,7 +192,7 @@ if __name__ == '__main__':
     # Instantiate CPUWatcher
     cpu = CPUWatcher(adict, headers, targets, data)
     log.info('[SERV PROC] CPU Thread instantiated')
-    data_manager = DataManager(adict, headers, targets, data)
+    data_manager = DataManager(adict, headers, targets, data, connection_table)
     log.info('[SERV PROC] DATA Thread instantiated')
 
     try:
@@ -225,7 +226,8 @@ if __name__ == '__main__':
                         log.info('[SERV PROC] Connection  is  {}'.format(s))
                         log.info('[SERV PROC] Connection table is now {}'.format(connection_table))
                         if s in connection_table:
-                            for target in connection_table[s]:
+                            log.info('[SERV PROC] Targets to remove are {}'.format(connection_table[s]))
+                            for target in connection_table[s][:]:
                                 stop_record(cpu, s, target)
                             del connection_table[s]
                             log.debug('[SERV PROC] Connection has been closed')

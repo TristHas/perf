@@ -8,7 +8,7 @@ import json
 import os
 
 class DataManager(object):
-    def __init__(self, adict, headers, targets, transmit):
+    def __init__(self, adict, headers, targets, transmit, connection_table):
         self.step = adict['step']
         self.timeout = int(adict['timeout'] / self.step)
 
@@ -18,16 +18,17 @@ class DataManager(object):
         self.targets = ['system'] + adict['processes']
         self.receivers = []
         self.transmit = transmit
+        self.connection_table = connection_table
 
         self.sys_headers = headers['system']
         self.proc_headers = headers['process']
 
-        self.data_thread = threading.Thread(target = self.processing, name = 'data managing', args = ())
+        self.data_thread = threading.Thread(target = self.process_loop, name = 'data managing', args = ())
         self.log.info('Starting DATA THREAD')
         self.data_thread.start()
         self.log.debug('DATA THREAD Started')
 
-    def processing(self):
+    def process_loop(self):
         while self.run:
             self.log.debug('[DATA THREAD] Waiting for queue')
             data = self.transmit.get()
@@ -55,13 +56,34 @@ class DataManager(object):
         self.receivers.append(connection)
 
     def process_send(self, connection, data):
-        mess = json.dumps(data)
+        targets = self.get_client_targets(connection)
+        self.log.debug('[DATA THREAD] targets are {}'.format(targets))
+        sub_data = self.get_sub_dict(data, targets)
+        self.log.debug('[DATA THREAD] sub_data is  {}'.format(sub_data))
+        mess = json.dumps(sub_data)
         self.log.debug('[DATA THREAD] Sending data {}'.format(mess))
         status = send_data(connection, mess)
         if status == '':
             self.receivers.remove(connection)
             self.log.info('[DATA THREAD] connection removed')
         self.log.debug('[DATA THREAD] Data sent')
+
+    def get_sub_dict(self, data, targets):
+
+        return dict([(key, data[key]) for key in targets if key in data])
+
+    def get_client_targets(self, connection):
+        client_address = connection.getpeername()[0]
+        targets = None
+        for client in self.connection_table:
+            self.log.debug('[DATA THREAD] Checking with potential address {} '.format(client.getpeername()))
+            if client.getpeername()[0] == client_address:
+                targets = self.connection_table[client]
+        if targets is not None:
+            return targets
+        else:
+            self.log.error('[DATA THREAD] Could not find client {} in connection table'.format(client_address))
+            return []
 
     def stop_send(self):
         self.log.info('[MAIN THREAD] Stopping DATA THREAD')

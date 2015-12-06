@@ -58,7 +58,7 @@ class CPUWatcher(object):
                     }
                 return True
             else:
-                self.log.error("Non valid process {}. Skipping this process".format(process))
+                self.log.error("Non valid process {}. Skipping this process".format(target))
                 return False
 
     def stop(self, target):
