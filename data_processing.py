@@ -12,7 +12,7 @@ import json
 DATA_PROC_LOG_FILE = os.path.join(LOCAL_DATA_DIR, 'data_processor.log')
 
 class DataProcessor(object):
-    def __init__(self, adict, queue, headers, targets):
+    def __init__(self, queue, headers, targets):
         self.log = Logger(DATA_PROC_LOG_FILE, level = V_DEBUG)
         # Main thread communication
         self.keep_running = True

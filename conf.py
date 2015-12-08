@@ -6,10 +6,11 @@ import os
 # Ubuntu /home/tristan/workspace/perf
 LOCAL_WORK_DIR  = '/Users/d-fr-mac0002/Desktop/dialog/projects/perf'      #os.path.dirname(os.path.realpath("__file__"))
 LOCAL_DATA_DIR  = os.path.join(LOCAL_WORK_DIR, 'data')
-NAO_HOME        = "/home/tristan/remote"
+NAO_HOME        = "/home/nao"
 NAO_WORK_DIR    = os.path.join(NAO_HOME, 'bench_dialog')
 NAO_DATA_DIR    = os.path.join(NAO_HOME, 'bench_data')
 CSV_SEP         = ','
+
 
 ###
 ###     System Watch var
@@ -20,16 +21,17 @@ SYS_CPU_OTHER   = ["time", 'load']
 LOAD_AVG        = ["lavg_1","lavg_5","lavg_15"]
 PROC_CPU_DATA   = ["time","utime","cutime","stime","cstime","majflt","majcfault"]
 PROC_MEM_DATA   = ["VmSize","VmPeak","VmStk","VmRSS", "Threads"]
+WATCH_TARGETS = [('system', 'system'), ('process', 'naoqi-service')]
 
 ###
 ###     Net communication
 ###
 # ubuntu "192.168.0.15"
-IP_1            = "192.168.0.15"
+IP_1            = "10.0.128.126"
 SOC_PORT_CTRL   = 6004
 SOC_PORT_DATA   = 6006
-LOGIN           = 'tristan'
-PWD             = 'Spaghett1'
+LOGIN           = 'nao'
+PWD             = 'nao'
 
 ###
 ###     Logging
@@ -46,7 +48,12 @@ SERV_LOG_FILE   = os.path.join(NAO_DATA_DIR, 'server.log')
 CPU_LOG_FILE    = os.path.join(NAO_DATA_DIR, 'cpu.log')
 CLIENT_LOG_FILE = os.path.join(LOCAL_DATA_DIR, 'cpu.log')
 
-
+###
+###     DEFAULT var
+###
+D_VERB          = V_DEBUG
+D_TIMEOUT       = 10000
+D_STEP          = 1
 
 ###
 ###     Print var
@@ -83,6 +90,4 @@ STATE_RECORD    = 1
 STATE_STORE     = 2
 STATE_SEND      = 3
 STATE_FULL      = 4
-
-
 

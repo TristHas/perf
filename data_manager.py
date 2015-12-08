@@ -8,14 +8,13 @@ import json
 import os
 
 class DataManager(object):
-    def __init__(self, adict, headers, targets, transmit, connection_table):
-        self.step = adict['step']
-        self.timeout = int(adict['timeout'] / self.step)
+    def __init__(self, headers, transmit, connection_table):
+        self.step = D_STEP
+        self.timeout = int(D_TIMEOUT / self.step)
 
-        self.log = Logger(DATA_LOG_FILE, adict['v'])
+        self.log = Logger(DATA_LOG_FILE, D_VERB)
         self.run = True
 
-        self.targets = ['system'] + adict['processes']
         self.receivers = []
         self.transmit = transmit
         self.connection_table = connection_table
@@ -29,6 +28,9 @@ class DataManager(object):
         self.log.debug('DATA THREAD Started')
 
     def process_loop(self):
+        ###
+        ### Add timeout so that we keep control when waiting for data
+        ###
         while self.run:
             self.log.debug('[DATA THREAD] Waiting for queue')
             data = self.transmit.get()
@@ -69,7 +71,6 @@ class DataManager(object):
         self.log.debug('[DATA THREAD] Data sent')
 
     def get_sub_dict(self, data, targets):
-
         return dict([(key, data[key]) for key in targets if key in data])
 
     def get_client_targets(self, connection):

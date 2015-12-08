@@ -6,47 +6,25 @@ from helpers import Logger, send_data, recv_data
 #from printer import print_dic, init_print
 from data_client import DataClient
 from data_processing import DataProcessor
-
 import socket, threading, select, Queue, json
 import time, sys, argparse
 
 
-### Code for server for sending headers.
-
-#dico = {}
-#for keys in self.targets:
-#    if keys == 'system':
-#        dico[keys] = self.sys_headers
-#        self.log.debug('[INIT THREAD] Got sys header')
-#    else:
-#        dico[keys] = self.proc_headers
-#        self.log.debug('[INIT THREAD] Got proc header')
-#mess = json.dumps(dico)
-#self.log.debug('[INIT THREAD] Sending {}'.format(mess))
-#send_data(connection, mess)
-#self.log.info('[INIT THREAD] Headers sent. End of thread')
-### Sync data thread
-
 class LightClient(object):
-    def __init__(self, ip, adict = {'v': V_DEBUG, 'processes':['naoqi-service']}):
+    def __init__(self, ip):
         if not os.path.isdir(LOCAL_DATA_DIR):
             os.makedirs(LOCAL_DATA_DIR)
-
         # Logging
-        self.log = Logger(CLIENT_LOG_FILE, adict['v'])
+        self.log = Logger(CLIENT_LOG_FILE, D_VERB)
         self.log.info('[MAIN THREAD] Instantiated client')
-        self.log.debug(adict)
-
         # Central data
         self.receiving = False
         self.define_headers()
-        self.define_targets(adict)
+        self.targets = {}
         self.transmit = Queue.Queue()
-
-        # workers
-        self.data_client = DataClient(adict, self.transmit, ip)
-        self.data_processor = DataProcessor(adict, self.transmit, self.headers, self.targets)
-
+        # Workers
+        self.data_client = DataClient(self.transmit, ip)
+        self.data_processor = DataProcessor(self.transmit, self.headers, self.targets)
         # Connection
         self.connect(ip)
 
@@ -64,23 +42,42 @@ class LightClient(object):
         head['system']  = SYS_CPU_OTHER + LOAD_AVG + SYS_CPU_DATA + SYS_MEM_DATA
         self.headers = head
 
-    def define_targets(self, adict):
-        targ = {}
-        targ['system'] = ['system']
-        targ['process'] = adict['processes']
-        self.targets = targ
+    def add_target(self, target, name):
+        if target in self.targets:
+            self.targets[target].append(name)
+        else:
+            self.targets[target]=[name]
+
+    def remove_target(self, target, name):
+       if target in self.targets:
+           if name in self.targets[target]:
+               self.targets[target].remove(name)
+               self.log.info('[MAIN THREAD] Removed {} named {}'.format(target, name))
+           else:
+               self.log.error('[MAIN THREAD] Asked to remove {} named {} while not recorded'.format(target, name))
+       else:
+           self.log.error('[MAIN THREAD] Asked to remove {} named {} while not recorded'.format(target, name))
 
     def start_record(self, target, name):
         self.log.debug('[MAIN THREAD] Asking server to start recording')
         msg = MSG_SEP.join([START_RECORD, target, name])
-        send_data(self.soc_ctrl,msg)
+        answer = send_data(self.soc_ctrl,msg)
         self.log.info('[MAIN THREAD] Server asked to start recording')
+        if answer == SYNC:
+            self.add_target(target, name)
+            self.log.info('[MAIN THREAD] Added {} named {}'.format(target, name))
+        else:
+            self.log.warn('[MAIN THREAD] Could not add {} named {} because of server answer'.format(target, name))
 
     def stop_record(self, target, name):
         self.log.debug('[MAIN THREAD] Asking server to stop recording')
         msg = MSG_SEP.join([STOP_RECORD, target, name])
-        send_data(self.soc_ctrl,msg)
+        answer = send_data(self.soc_ctrl,msg)
         self.log.info('[MAIN THREAD] Server asked to stop recording')
+        if answer == SYNC:
+            self.remove_target(target, name)
+        else:
+            self.log.warn('[MAIN THREAD] Could not remove {} named {} because of server answer'.format(target, name))
 
     def start_receive(self):
         if not self.receiving:
@@ -116,10 +113,7 @@ class LightClient(object):
         self.data_processor.start_print()
 
     def stop_print(self):
-        self.printing = data_processor.stop_print()
-
-    def stop_print(self):
-        self.data_processor.stop_print()
+        self.printing = self.data_processor.stop_print()
 
     def stop_process(self):
         self.stop_print()
@@ -168,7 +162,7 @@ if __name__ == '__main__':
         ip = IP_1
 
     print 'Arguments parsed'
-    client = LightClient(ip, adict)
+    client = LightClient(ip)
     while sys.stdin in select.select([sys.stdin], [], [], 1000)[0]:
         line = sys.stdin.readline()
         if line:

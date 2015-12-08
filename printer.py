@@ -112,6 +112,44 @@ def print_dic_fast(dico, (fig, ax, backgrounds)):
             break
 
 ###
+###
+###
+
+def fix_print(dico):
+    n_elem = len(dico)
+    log.debug('len({})={}'.format(dico, n_elem))
+    n_col = N_COL
+    if n_elem % n_col == 0:
+        n_raw = int(n_elem / n_col)
+    else:
+        n_raw = int(n_elem / n_col) + 1
+    fig, ax = plt.subplots(n_raw,n_col)
+    log.info('Subplots are {} by {}'.format(n_raw, n_col))
+    log.verb('Printing: {}'.format(dico))
+    keys = dico.keys()
+    ind = 0
+    for raw in ax:
+        if ind >= len(keys):
+            log.warn('Odd Breaking while printing')
+            break
+        for column in raw:
+            log.debug('back in loop')
+            log.debug('plot {}'.format(dico[keys[ind]]))
+            column.plot(dico[keys[ind]])
+            column.set_title(keys[ind])
+            ind += 1
+            if ind >= len(keys):
+                log.verb('breaking')
+                break
+    plt.show()
+
+
+
+
+
+
+
+###
 ###     Old non optimized printing utilities
 ###     Should refactor input to match data_processor client workflow
 ###
@@ -261,7 +299,6 @@ def print_file(file_path):
             headers = SYS_CPU_OTHER + LOAD_AVG + SYS_CPU_DATA + SYS_MEM_DATA
         else:
             headers =PROC_CPU_DATA + PROC_MEM_DATA
-        fig, ax = init_print(headers)
         print_data = {}
         for elem in headers:
             print_data[elem] = []
@@ -271,8 +308,7 @@ def print_file(file_path):
                 print_data[elem].append(row[elem])
         for elem in headers:
             print 'print_data[{}]={}'.format(elem,print_data[elem])
-        print_dic(print_data, ax, fig)
-        time.sleep(20)
+        fix_print(print_data)
 
 if __name__ == '__main__':
-    print_file('/Users/d-fr-mac0002/Desktop/dialog/projects/perf/data/easy_client/naoqi-service')
+    print_file('/Users/d-fr-mac0002/Desktop/dialog/projects/perf/data/78_JULIEN/naoqi-service')

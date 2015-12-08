@@ -12,13 +12,13 @@ from helpers import Logger
 class CPUWatcher(object):
     # Could easily add irq, frag, pgfault, and vmem from bench/cpuload.
     # Which are worth watching?
-    def __init__(self, adict, headers, targets, data):
+    def __init__(self, headers, data):
         if not os.path.isdir(NAO_DATA_DIR):
             os.makedirs(NAO_DATA_DIR)
 
-        self.log = Logger(CPU_LOG_FILE, adict['v'])
-        self.step = adict['step']
-        self.timeout = int(adict['timeout'] / self.step)
+        self.log        = Logger(CPU_LOG_FILE, D_VERB)
+        self.step       = D_STEP
+        self.timeout    = int(D_TIMEOUT / self.step)
 
         # Sync variables
         self.transmit = data

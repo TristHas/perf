@@ -8,10 +8,10 @@ from conf import *
 DATA_CLIENT_LOG_FILE = os.path.join(LOCAL_DATA_DIR, 'data_client.log')
 
 class DataClient(object):
-    def __init__(self, adict, queue, ip):
+    def __init__(self, queue, ip):
         if not os.path.isdir(LOCAL_DATA_DIR):
             os.makedirs(LOCAL_DATA_DIR)
-        self.log = Logger(DATA_CLIENT_LOG_FILE, adict['v'])
+        self.log = Logger(DATA_CLIENT_LOG_FILE, D_VERB)
         self.log.info('[MAIN THREAD] Instantiatie data_client')
         self.transmit = queue
         self.receiving = False
@@ -55,3 +55,7 @@ class DataClient(object):
             self.log.info('[DATA THREAD] self.receiving is False. Closing socket ')
             self.soc_data.close()
         self.log.info('[DATA THREAD] Exiting thread \n')
+
+
+
+
