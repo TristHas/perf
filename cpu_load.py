@@ -113,7 +113,7 @@ class CPUWatcher(object):
                 keys = self.proc.keys()
                 for key in keys:
                     if key == 'system':
-                        tmp[key] = self.get_sys_data(tme)
+                        tmp[key] = self.get_sys_data(tme)               
                     else:
                         tmp[key] = self.get_proc_data(tme, key)
                 if tmp:
@@ -133,11 +133,13 @@ class CPUWatcher(object):
         tmp_sys.update(self.get_load_avg())                         # LOAD_AVG
         tmp_sys['time'] = tme                                       # SYS_CPU_OTHER
         tmp_sys['load'] = 100 * (1 - tmp_sys['idle_time'])          # add frag, pgfault, any other?
+        tmp_sys['timestamp'] = time.time()
         return tmp_sys
 
     def get_proc_data(self,tme, key):
         tmp_proc = self.get_proc_cpu_stat(key, tme)                 # PROC_CPU_DATA
         tmp_proc.update(self.get_proc_mem_stat(key))                # PROC_MEM_DATA
+        tmp_proc['timestamp'] = time.time()
         return tmp_proc
 
     def _get_time(self):

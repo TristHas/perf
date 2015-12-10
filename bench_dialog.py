@@ -7,8 +7,6 @@ from easy_client import LightClient
 from fabric.api import env
 import argparse, os, time, json, csv
 
-
-
 class RemoteCPUWatch(object):
     def __init__(self, ip):
         self.ip = ip
@@ -59,6 +57,14 @@ class RemoteCPUWatch(object):
             self.receive = False
             self.record = False
 
+    def get_naoqiservice_memory_diff(self):
+        #mem =
+        pass
+
+
+    ###
+    ### Helpers
+    ###
     def _start_record(self):
         self.client.start_record('system', 'system')
         self.client.start_record('process', 'naoqi-service')
@@ -68,7 +74,6 @@ class RemoteCPUWatch(object):
         self.client.stop_record('process', 'naoqi-service')
 
     def _check_action(self):
-        print 'Check_action {} '.format(self.printer or self.store)
         return self.printer or self.store
 
     def get_data(self, target, field):
@@ -84,7 +89,6 @@ class RemoteCPUWatch(object):
         except AttributeError:
             return None
 
-
 def parserArguments(parser):
     parser.add_argument('--proc' , dest = 'proc', nargs='*',
         default = [], help = 'processes to watch')
@@ -98,22 +102,16 @@ def parserArguments(parser):
         default = 1 , help = 'verbosity level')
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description = 'client for requesting robot system data')
-    parserArguments(parser)
-    args = parser.parse_args()
-    adict = vars(args)
-
-    cpu = RemoteCPUWatch(ip = '10.0.132.103')
-    cpu.start_store()
-    time.sleep(5)
-    print 'Done'
-    cpu.stop_store()
-    print cpu.get_data('system','load')
-    print cpu.get_data('system','lavg_15')
-    print cpu.get_data('system','MemFree')
-    print cpu.get_data('system','nice_time')
-    print cpu.get_data('naoqi-service','time')
-    print cpu.get_data('naoqi-service','VmSize')
-    print cpu.get_data('naoqi-service','VmRSS')
-    print cpu.get_data('naoqi-service','Threads')
+    cpu = RemoteCPUWatch(ip = '10.0.132.205')
+    cpu.start_display()
+    raw_input()
+    cpu.stop_display()
+    if False:
+        print cpu.get_data('system','load')
+        print cpu.get_data('system','lavg_15')
+        print cpu.get_data('system','MemFree')
+        print cpu.get_data('system','nice_time')
+        print cpu.get_data('naoqi-service','time')
+        print cpu.get_data('naoqi-service','VmSize')
+        print cpu.get_data('naoqi-service','VmRSS')
+        print cpu.get_data('naoqi-service','Threads')

@@ -49,7 +49,7 @@ class DataProcessor(object):
             try:
                 data = self.transmit.get(timeout = 1)
                 data = json.loads(data)
-                self.log.debug('[PROCESS THREAD] Got data')
+                self.log.debug('[PROCESS THREAD] Got data {}'.format(data))
                 if self.printing:
                     to_print = self.build_print_data(data)
                     self.log.debug('[PROCESS THREAD] Printing')
@@ -112,9 +112,8 @@ class DataProcessor(object):
         # Make record dir
         if not dirname:
             dirname = time.time()
-        self.log.info('[MAIN THREAD] Starting local storage')
         directory = os.path.join(LOCAL_DATA_DIR, dirname)
-        print "directory = " + directory
+        self.log.info('[MAIN THREAD] Starting local storage in {}'.format(directory))
         if os.path.isdir(directory):
             shutil.rmtree(directory)
         os.makedirs(directory)
@@ -129,12 +128,10 @@ class DataProcessor(object):
         for key in self.files:
             if key == 'system':
                 print >> self.files[key], list_to_csv(self.headers['system'])
-                print self.headers['system']
-                self.log.debug('[MAIN THREAD] wrote {}'.format(list_to_csv(self.headers['system'])))
+                self.log.debug('[MAIN THREAD] wrote {} in file {}'.format(list_to_csv(self.headers['system']), key))
             else:
                 print >> self.files[key], list_to_csv(self.headers['process'])
-                print self.headers['process']
-                self.log.debug('[MAIN THREAD] wrote {}'.format(list_to_csv(self.headers['process'])))
+                self.log.debug('[MAIN THREAD] wrote {} in file {}'.format(list_to_csv(self.headers['process']), key))
         # Ask start storing
         self.local_store = True
         self.log.debug('[MAIN THREAD] End start local')

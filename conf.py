@@ -21,13 +21,14 @@ SYS_CPU_OTHER   = ["time", 'load']
 LOAD_AVG        = ["lavg_1","lavg_5","lavg_15"]
 PROC_CPU_DATA   = ["time","utime","cutime","stime","cstime","majflt","majcfault"]
 PROC_MEM_DATA   = ["VmSize","VmPeak","VmStk","VmRSS", "Threads"]
+TIMESTAMPS      = ['timestamp']
 WATCH_TARGETS = [('system', 'system'), ('process', 'naoqi-service')]
 
 ###
 ###     Net communication
 ###
 # ubuntu "192.168.0.15"
-IP_1            = "10.0.128.126"
+IP_1            = "10.0.132.205"
 SOC_PORT_CTRL   = 6004
 SOC_PORT_DATA   = 6006
 LOGIN           = 'nao'

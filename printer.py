@@ -1,7 +1,6 @@
 import numpy as np
 import time, csv
 import matplotlib
-#matplotlib.use('GTKAgg')
 from matplotlib import pyplot as plt
 from helpers import Logger
 from conf import *

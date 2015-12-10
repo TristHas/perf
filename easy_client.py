@@ -38,8 +38,8 @@ class LightClient(object):
 
     def define_headers(self):
         head = {}
-        head['process'] = PROC_CPU_DATA + PROC_MEM_DATA
-        head['system']  = SYS_CPU_OTHER + LOAD_AVG + SYS_CPU_DATA + SYS_MEM_DATA
+        head['process'] = PROC_CPU_DATA + PROC_MEM_DATA + TIMESTAMPS
+        head['system']  = SYS_CPU_OTHER + LOAD_AVG + SYS_CPU_DATA + SYS_MEM_DATA + TIMESTAMPS
         self.headers = head
 
     def add_target(self, target, name):

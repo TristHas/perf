@@ -16,8 +16,8 @@ def parserArguments(parser):
 
 def define_headers():
     head = {}
-    head['process'] = PROC_CPU_DATA + PROC_MEM_DATA
-    head['system']  = SYS_CPU_OTHER + LOAD_AVG + SYS_CPU_DATA + SYS_MEM_DATA
+    head['process'] = PROC_CPU_DATA + PROC_MEM_DATA + TIMESTAMPS
+    head['system']  = SYS_CPU_OTHER + LOAD_AVG + SYS_CPU_DATA + SYS_MEM_DATA + TIMESTAMPS
     return head
 
 def define_targets():
@@ -208,7 +208,8 @@ if __name__ == '__main__':
                         if s in connection_table:
                             log.debug('[SERV PROC] Targets to remove are {}'.format(connection_table[s]))
                             for target in connection_table[s][:]:
-                                stop_record(cpu, s, target)
+                                msg = MSG_SEP.join(['dummy', 'dummy', target])
+                                stop_record(s, msg)
                             del connection_table[s]
                             log.debug('[SERV PROC] Connection has been closed')
                         if s in outputs:
