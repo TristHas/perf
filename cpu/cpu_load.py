@@ -13,10 +13,7 @@ class CPUWatcher(object):
     # Could easily add irq, frag, pgfault, and vmem from bench/cpuload.
     # Which are worth watching?
     def __init__(self, headers, data):
-        if not os.path.isdir(NAO_DATA_DIR):
-            os.makedirs(NAO_DATA_DIR)
-
-        self.log        = Logger(CPU_LOG_FILE, D_VERB)
+        self.log        = Logger(CPU_SERVER_LOG_FILE, D_VERB)
         self.step       = D_STEP
         self.timeout    = int(D_TIMEOUT / self.step)
 

@@ -6,6 +6,9 @@ from conf import *
 class Logger():
     def __init__(self, filename, level = V_INFO, real_time = True):
         self.lev = level
+        dir = os.path.dirname(filename)
+        if not os.path.isdir(dir):
+            os.makedirs(dir)
         self.file = open(filename, 'w')
         self.real_time = real_time
 

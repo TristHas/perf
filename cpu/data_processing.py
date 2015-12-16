@@ -9,11 +9,9 @@ import shutil, os
 import threading
 import json
 
-DATA_PROC_LOG_FILE = os.path.join(LOCAL_DATA_DIR, 'data_processor.log')
-
 class DataProcessor(object):
     def __init__(self, queue, headers, targets):
-        self.log = Logger(DATA_PROC_LOG_FILE, level = V_DEBUG)
+        self.log = Logger(PROC_CLIENT_LOG_FILE, level = D_VERB)
         # Main thread communication
         self.keep_running = True
         self.transmit = queue
@@ -77,6 +75,7 @@ class DataProcessor(object):
     def stop_print(self):
         self.log.info('[MAIN THREAD] Stop printing')
         self.printing = False
+        clear_print()
 
     def build_print_headers(self):
         ret = {}
@@ -91,7 +90,6 @@ class DataProcessor(object):
     def build_print_data(self, dico):
         for target in dico:
             for data_field in dico[target]:
-                # Easy to handle data sequence length here
                 self.base_data[target][data_field].append(dico[target][data_field])
     ####
     ####        Storage utilities
@@ -112,18 +110,20 @@ class DataProcessor(object):
         # Make record dir
         if not dirname:
             dirname = time.time()
-        directory = os.path.join(LOCAL_DATA_DIR, dirname)
+        directory = os.path.join(DATA_DIR, dirname)
         self.log.info('[MAIN THREAD] Starting local storage in {}'.format(directory))
         if os.path.isdir(directory):
             shutil.rmtree(directory)
         os.makedirs(directory)
         self.log.debug('[MAIN THREAD] Made local record dir')
+
         # Open files
         for types in self.targets:
             for instance in self.targets[types]:
                 filename = os.path.join(directory, instance)
                 self.files[instance] = open(filename, 'w')
                 self.log.debug('[MAIN THREAD] Opened {}'.format(filename))
+
         # Write headers
         for key in self.files:
             if key == 'system':
@@ -132,7 +132,8 @@ class DataProcessor(object):
             else:
                 print >> self.files[key], list_to_csv(self.headers['process'])
                 self.log.debug('[MAIN THREAD] wrote {} in file {}'.format(list_to_csv(self.headers['process']), key))
-        # Ask start storing
+
+        # Ask start storing and return store file paths
         self.local_store = True
         self.log.debug('[MAIN THREAD] End start local')
         return [os.path.join(directory, instance) for instance in self.files]
@@ -143,7 +144,7 @@ class DataProcessor(object):
         for key in self.files:
             self.files[key].close()
             self.log.debug('closed {}'.format(key))
-
+        self.files = {}
 
 
 

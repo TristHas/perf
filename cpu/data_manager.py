@@ -12,7 +12,7 @@ class DataManager(object):
         self.step = D_STEP
         self.timeout = int(D_TIMEOUT / self.step)
 
-        self.log = Logger(DATA_LOG_FILE, D_VERB)
+        self.log = Logger(DATA_SERVER_LOG_FILE, D_VERB)
         self.run = True
 
         self.receivers = []

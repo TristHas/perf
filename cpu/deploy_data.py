@@ -2,36 +2,41 @@
 # -*- coding: utf-8 -*-
 
 from fabric.api import run, cd, env, put, get
-import argparse, time
+import argparse, time, os
 from conf import *
 
-def deploy_server(ip = IP_1):
+def deploy_server(ip):
     env.user        = LOGIN
     env.password    = PWD
     env.host_string = ip
     clean_server(ip)
-    run("mkdir {}".format(NAO_WORK_DIR))
-    run("mkdir {}".format(NAO_DATA_DIR))
-    local_cpu_file = os.path.join(LOCAL_WORK_DIR, 'cpu_load.py')
-    local_server_file = os.path.join(LOCAL_WORK_DIR, 'record_server.py')
-    conf_file = os.path.join(LOCAL_WORK_DIR, 'conf.py')
-    data_file = os.path.join(LOCAL_WORK_DIR, 'data_manager.py')
-    helper_file = os.path.join(LOCAL_WORK_DIR, 'helpers.py')
-    put(local_cpu_file, NAO_WORK_DIR)
-    put(local_server_file, NAO_WORK_DIR)
-    put(conf_file, NAO_WORK_DIR)
-    put(data_file, NAO_WORK_DIR)
-    put(helper_file, NAO_WORK_DIR)
 
-def run_server(ip = IP_1):
+    run("mkdir {}".format(ROOT_DIR))
+    run("mkdir {}".format(WORK_DIR))
+    run("mkdir {}".format(DATA_DIR))
+    run("mkdir {}".format(LOG_DIR))
+
+    local_work_dir = os.path.dirname(os.path.abspath(__file__))
+    local_cpu_file = os.path.join(local_work_dir, 'cpu_load.py')
+    local_server_file = os.path.join(local_work_dir, 'record_server.py')
+    conf_file = os.path.join(local_work_dir, 'conf.py')
+    data_file = os.path.join(local_work_dir, 'data_manager.py')
+    helper_file = os.path.join(local_work_dir, 'helpers.py')
+
+    put(local_cpu_file, WORK_DIR)
+    put(local_server_file, WORK_DIR)
+    put(conf_file, WORK_DIR)
+    put(data_file, WORK_DIR)
+    put(helper_file, WORK_DIR)
+
+def run_server(ip):
     env.user        = LOGIN
     env.password    = PWD
     env.host_string = ip
-    run('python /home/nao/bench_dialog/record_server.py < /dev/null > /dev/null 2>&1 &', pty = False)
-    print 'Has run server'
+    run('python {}/record_server.py < /dev/null > /dev/null 2>&1 &'.format(WORK_DIR), pty = False)
     time.sleep(2)
 
-def kill_server(ip = IP_1):
+def kill_server(ip):
     env.user        = LOGIN
     env.password    = PWD
     env.host_string = ip
@@ -40,21 +45,15 @@ def kill_server(ip = IP_1):
     pid = y[0].split()[1]
     if len(y) == 3:
         run('kill -9 {}'.format(pid))
-        print 'has killed {}'.format(y[0].split()[-1])
-    else:
-        print 'Nothing has been killed'
 
-def clean_server(ip = IP_1):
+def clean_server(ip):
     env.user        = LOGIN
     env.password    = PWD
     env.host_string = ip
+    folders = run("ls {}".format(PARENT_DIR))
+    if DIR_NAME in folders:
+        run('rm -r {} > /dev/null 2>&1'.format(ROOT_DIR))
 
-    folders = run("ls {}".format(NAO_HOME))
-    if "bench_dialog" in folders:
-        run('rm -r {}'.format(NAO_WORK_DIR))
-
-    if "bench_data" in folders:
-        run('rm -r {}'.format(NAO_DATA_DIR))
 
 def parserArguments(parser):
     parser.add_argument('--clean', '-c', dest = 'clean', action = 'store_true', help = 'Cleans remote HOME')
@@ -69,20 +68,16 @@ if __name__ == '__main__':
     args = parser.parse_args()
     adict = vars(args)
     if adict['ip']:
-        env.user        = LOGIN
-        env.password    = PWD
-        # FIXME: To be changed to handle multiple deploy IPs
-        env.host_string = adict['ip'][0]
-
+        ip = adict['ip'][0]
     if adict['kill']:
-        kill_server()
+        kill_server(ip)
     if adict['clean']:
-        clean_server()
+        clean_server(ip)
     if adict['deploy']:
-        deploy_server()
+        deploy_server(ip)
     if adict['run']:
-        run_server()
+        run_server(ip)
 
-    if not (adict['clean'] or adict['kill'] or adict['deploy'] or adict['run']):
+    if not (adict['ip'] and (adict['clean'] or adict['kill'] or adict['deploy'] or adict['run'])):
         parser.error("""Please specify valid options to the script.
                         You can display options function with -h""")

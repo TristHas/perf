@@ -5,21 +5,14 @@ import socket, threading
 from helpers import Logger, send_data, recv_data
 from conf import *
 
-DATA_CLIENT_LOG_FILE = os.path.join(LOCAL_DATA_DIR, 'data_client.log')
-
 class DataClient(object):
     def __init__(self, queue, ip):
-        if not os.path.isdir(LOCAL_DATA_DIR):
-            os.makedirs(LOCAL_DATA_DIR)
         self.log = Logger(DATA_CLIENT_LOG_FILE, D_VERB)
         self.log.info('[MAIN THREAD] Instantiatie data_client')
         self.transmit = queue
         self.receiving = False
         self.remote_ip = ip
         self.my_ip = socket.gethostbyname(socket.gethostname())
-        # Headers could be used to check structure integrity of received data
-        # Data integrity check put in data_processor
-        # self.headers = None
 
     def start(self):
         self.soc_data = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

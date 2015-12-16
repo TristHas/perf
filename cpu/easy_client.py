@@ -3,29 +3,21 @@
 
 from conf import *
 from helpers import Logger, send_data, recv_data
-#from printer import print_dic, init_print
 from data_client import DataClient
 from data_processing import DataProcessor
 import socket, threading, select, Queue, json
 import time, sys, argparse
 
-
 class LightClient(object):
     def __init__(self, ip):
-        if not os.path.isdir(LOCAL_DATA_DIR):
-            os.makedirs(LOCAL_DATA_DIR)
-        # Logging
-        self.log = Logger(CLIENT_LOG_FILE, D_VERB)
+        self.log = Logger(MAIN_CLIENT_LOG_FILE, D_VERB)
         self.log.info('[MAIN THREAD] Instantiated client')
-        # Central data
         self.receiving = False
         self.define_headers()
         self.targets = {}
         self.transmit = Queue.Queue()
-        # Workers
         self.data_client = DataClient(self.transmit, ip)
         self.data_processor = DataProcessor(self.transmit, self.headers, self.targets)
-        # Connection
         self.connect(ip)
 
     def connect(self, ip):
@@ -100,6 +92,7 @@ class LightClient(object):
             self.data_client.stop()
             self.log.info("[MAIN THREAD] Asked server to stop receiving")
             self.receiving = False
+            send_data(self.soc_ctrl,STOP_SEND)
         else:
             self.log.warn("[MAIN THREAD] Asked to stop receiving while already receiving")
 
@@ -136,19 +129,6 @@ def parserArguments(parser):
     parser.add_argument('--ip', '-i' , dest = 'ip', type = str, default = None , help = 'ip to connect to')
 
 
-remote_commands = {
-    'start record\n'  : START_RECORD,
-    'stop record\n'   : STOP_RECORD,
-    'start send'    : START_SEND,
-    'stop send'     : STOP_SEND,
-    'stop\n'          : STOP_ALL,
-}
-
-local_commands = {
-    'start print'   :'',
-    'stop print'    :'',
-    'get data'      :'',
-}
 
 if __name__ == '__main__':
     print 'Start'
@@ -159,7 +139,7 @@ if __name__ == '__main__':
     if adict['ip']:
         ip = adict['ip']
     else:
-        ip = IP_1
+        sys.exit('Please specify an ip with --ip option')
 
     print 'Arguments parsed'
     client = LightClient(ip)
@@ -179,7 +159,6 @@ if __name__ == '__main__':
                         client.start_record('system', 'system')
                     else:
                         client.start_record('process', data[2])
-
             elif line.startswith('stop record'):
                 data = line.split()
                 if len(data) !=3:
@@ -189,7 +168,6 @@ if __name__ == '__main__':
                         client.stop_record('system', 'system')
                     else:
                         client.stop_record('process', data[2])
-
             elif line == 'print\n':
                 client.start_print()
             elif line =="start store\n":

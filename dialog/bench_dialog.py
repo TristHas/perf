@@ -2,20 +2,45 @@
 # -*- coding: utf-8 -*-
 #from functionaltools import ssh_tools
 
-from conf import *
-from easy_client import LightClient
-from fabric.api import env
+from ..log.log_watch import LogWatch
+from ..cpu.easy_client import LightClient
 import argparse, os, time, json, csv
+import numpy as np
 
-class RemoteCPUWatch(object):
+class DialogBench(object):
     def __init__(self, ip):
         self.ip = ip
         self.client = LightClient(ip = self.ip)
+        self.log = LogWatch(ip)
         self.record = False
         self.receive = False
         self.printer = False
         self.store = False
         self.files = []
+
+    def profile_compilation_performance(self, testID, visu = False):
+        self.log.start_watch_dialog()
+        self.start_store(testID)
+        if visu:
+            self.start_display()
+
+    def get_compilation_performance_results(self):
+        self.log.stop_watch_dialog()
+        self.stop_store()
+        self.stop_display()
+        results = [ self.log.get_load_time(),
+                    self.log.get_bundle_compile_time('welcome'),
+                    self.log.get_model_compile_time('welcome'),
+                    self.log.get_reco_compile_time('welcome', 'Japanese'),
+                    self.log.get_reco_compile_time('welcome', 'English'),
+                    self.get_naoqiservice_VmRSS_diff(),
+                    self.get_naoqiservice_VmSize_diff(),
+                    self.get_cpu_lavg1_max(),
+                    self.get_cpu_iotime_mean(),
+                    self.get_cpu_majflt_sum(),
+                    self.get_naoqiservice_stime_mean(),
+                    self.get_naoqiservice_utime_mean(),
+                    ]
 
     def start_display(self):
         if not self.record:
@@ -50,6 +75,7 @@ class RemoteCPUWatch(object):
 
     def stop_store(self):
         self.client.stop_store()
+        self.files = []
         self.store = False
         if not self._check_action():
             self._stop_record()
@@ -57,10 +83,61 @@ class RemoteCPUWatch(object):
             self.receive = False
             self.record = False
 
-    def get_naoqiservice_memory_diff(self):
-        #mem =
-        pass
+    def get_naoqiservice_VmRSS_diff(self):
+        try:
+            data = self.get_data('naoqi-service', 'VmRSS')
+            result = data[-1] - data[0]
+        except Exception:
+            return None
+        return result
 
+    def get_naoqiservice_VmSize_diff(self):
+        try:
+            data = self.get_data('naoqi-service', 'VmSize')
+            result = data[-1] - data[0]
+        except Exception:
+            return None
+        return result
+
+    def get_naoqiservice_utime_mean(self):
+        try:
+            data = self.get_data('naoqi-service', 'utime')
+            result = np.mean(data)
+        except Exception:
+            return None
+        return result
+
+    def get_naoqiservice_stime_mean(self):
+        try:
+            data = self.get_data('naoqi-service', 'stime')
+            result = np.mean(data)
+        except Exception:
+            return None
+        return result
+
+    def get_cpu_iotime_mean(self):
+        try:
+            data = self.get_data('system', 'io_time')
+            result = np.mean(data)
+        except Exception:
+            return None
+        return result
+
+    def get_cpu_lavg1_max(self):
+        try:
+            data = self.get_data('system', 'lavg_1')
+            result = np.max(data)
+        except Exception:
+            return None
+        return result
+
+    def get_cpu_majflt_sum(self):
+        try:
+            data = self.get_data('naoqi-service', 'majflt')
+            result = np.sum(data)
+        except Exception:
+            return None
+        return result
 
     ###
     ### Helpers
@@ -84,7 +161,7 @@ class RemoteCPUWatch(object):
                         reader = csv.DictReader(csvfile)
                         result = []
                         for row in reader:
-                            result.append(row[field])
+                            result.append(float(row[field]))
                         return result
         except AttributeError:
             return None
@@ -101,17 +178,3 @@ def parserArguments(parser):
     parser.add_argument('--verbose', '-v' , dest = 'v', type = int,
         default = 1 , help = 'verbosity level')
 
-if __name__ == '__main__':
-    cpu = RemoteCPUWatch(ip = '10.0.132.205')
-    cpu.start_display()
-    raw_input()
-    cpu.stop_display()
-    if False:
-        print cpu.get_data('system','load')
-        print cpu.get_data('system','lavg_15')
-        print cpu.get_data('system','MemFree')
-        print cpu.get_data('system','nice_time')
-        print cpu.get_data('naoqi-service','time')
-        print cpu.get_data('naoqi-service','VmSize')
-        print cpu.get_data('naoqi-service','VmRSS')
-        print cpu.get_data('naoqi-service','Threads')
