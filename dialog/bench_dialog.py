@@ -21,13 +21,14 @@ class DialogBench(object):
     def profile_compilation_performance(self, testID, visu = False):
         self.log.start_watch_dialog()
         self.start_store(testID)
+        self.testID = testID
         if visu:
             self.start_display()
 
     def get_compilation_performance_results(self):
         self.log.stop_watch_dialog()
+        self.log.dump_logs(self.testID)
         self.stop_store()
-        self.stop_display()
         results = [ self.log.get_load_time(),
                     self.log.get_bundle_compile_time('welcome'),
                     self.log.get_model_compile_time('welcome'),
@@ -41,6 +42,9 @@ class DialogBench(object):
                     self.get_naoqiservice_stime_mean(),
                     self.get_naoqiservice_utime_mean(),
                     ]
+        self.stop_display()
+        self.testID = 'none'
+        return results
 
     def start_display(self):
         if not self.record:
@@ -54,13 +58,14 @@ class DialogBench(object):
         self.printer = True
 
     def stop_display(self):
-        self.client.stop_print()
-        self.printer = False
-        if not self._check_action():
-            self._stop_record()
-            self.client.stop_process()
-            self.receive = False
-            self.record = False
+        if self.printer:
+            self.client.stop_print()
+            self.printer = False
+            if not self._check_action():
+                self._stop_record()
+                self.client.stop_process()
+                self.receive = False
+                self.record = False
 
     def start_store(self, dirname = 'remote_cpu'):
         if not self.record:
@@ -74,14 +79,15 @@ class DialogBench(object):
         self.receive = True
 
     def stop_store(self):
-        self.client.stop_store()
-        self.files = []
-        self.store = False
-        if not self._check_action():
-            self._stop_record()
-            self.client.stop_process()
-            self.receive = False
-            self.record = False
+        if self.store:
+            self.client.stop_store()
+            self.files = []
+            self.store = False
+            if not self._check_action():
+                self._stop_record()
+                self.client.stop_process()
+                self.receive = False
+                self.record = False
 
     def get_naoqiservice_VmRSS_diff(self):
         try:
@@ -151,6 +157,7 @@ class DialogBench(object):
         self.client.stop_record('process', 'naoqi-service')
 
     def _check_action(self):
+        print 'self.printer = ' + str(self.printer) + ' self.store = ' + str(self.store)
         return self.printer or self.store
 
     def get_data(self, target, field):
@@ -161,6 +168,7 @@ class DialogBench(object):
                         reader = csv.DictReader(csvfile)
                         result = []
                         for row in reader:
+                            print row
                             result.append(float(row[field]))
                         return result
         except AttributeError:

@@ -11,7 +11,7 @@ class LogWatch(object):
     is_logging      = False
     dialog_log_records     = []
 
-    def __init__(self, ip, message_start = 'Enable wav logging', message_stop = 'Preload finished'):
+    def __init__(self, ip, message_start = '', message_stop = 'Not existing One'):
         self.s = Session()
         self.s.connect(ip)
         self.log_manager = self.s.service("LogManager")
@@ -86,7 +86,7 @@ class LogWatch(object):
     def get_model_compile_time(self, bundle):
         try:
             begin = 'Compile bundle: {}'.format(bundle)
-            log = self.get_log_subset(substring = '...model compiled', begin = 'Compile bundle: {}'.format(bundle), end = 'Bundle compilation time')
+            log = self.get_log_subset(substring = '...model compiled', begin = 'Compile bundle: {}'.format(bundle), end = '...model compiled')
             ret_val = float(log[0][1].rsplit()[-2].strip('(')) / 1000
         except Exception:
             return None
@@ -96,6 +96,7 @@ class LogWatch(object):
         try:
             bundle_log = self.get_log_subset(substring = '', begin = 'Compile bundle: {}'.format(bundle),
                                              end = 'Bundle compilation time')
+
             log = self.get_log_subset(substring = 'Speech Recognition: Compilation time', begin = language,
                                       end = 'Speech Recognition: Compilation time', logs = bundle_log)
             ret_val = float(log[0][1].rsplit()[-2]) / 1000
@@ -127,7 +128,6 @@ class LogWatch(object):
         error = [x[1] if x <= 2 else False for x in logs]
         return error
 
-
 ###
 ###     Callbacks
 ###
@@ -141,10 +141,18 @@ def dialog_preload_timestamp_message(mess):
         if LogWatch.dialog_message_stop in mess['message']:
             LogWatch.is_logging = False
 
+def general_log_messages(mess):
+    if LogWatch.dialog_message_start in mess['message']:
+        LogWatch.is_logging = True
+    if LogWatch.is_logging:
+        LogWatch.dialog_log_records.append((mess['timestamp']['tv_sec'], mess['message'], mess['level']))
+    if LogWatch.dialog_message_stop in mess['message']:
+        LogWatch.is_logging = False
 
 if __name__ == '__main__':
-    ip = '10.0.132.103'
-    x = LogWatch(ip = ip, message_start = 'Enable wav logging', message_stop = 'Preload finished')
+    ip = '10.0.132.205'
+    x = LogWatch(ip = ip)
+    x.start_watch_dialog()
     s = Session()
     s.connect(ip)
     dialog = s.service('ALDialog')
@@ -152,25 +160,13 @@ if __name__ == '__main__':
     dialog._resetPreload()
     print 'Preloading ...'
     dialog._preloadMain()
+    x.stop_watch_dialog()
     print LogWatch.dialog_log_records
 
-    print 'Loading Time'
-    print x.get_load_time()
-    tme_range = x.get_timestamp_range('loading')
-    print tme_range
-
-    tme_range = x.get_timestamp_range('compile_bundle')
-    print 'Bundle compilation time'
-    print tme_range[-1] - tme_range[0]
-    print x.get_bundle_compile_time('welcome')
-
-    tme_range = x.get_timestamp_range('compile_model')
-    print 'Model compilation time'
-    print tme_range[-1] - tme_range[0]
-    print x.get_model_compile_time('welcome')
-
-    print x.get_reco_compile_time('welcome', 'Japanese')
-    print x.get_reco_compile_time('welcome', 'English')
+    print x.get_bundle_compile_time('welcome'),
+    print x.get_model_compile_time('welcome'),
+    print x.get_reco_compile_time('welcome', 'Japanese'),
+    print x.get_reco_compile_time('welcome', 'English'),
 
 
 

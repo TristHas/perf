@@ -144,8 +144,9 @@ class DataProcessor(object):
         for key in self.files:
             self.files[key].close()
             self.log.debug('closed {}'.format(key))
+
+
+    def reset_processor(self):
         self.files = {}
-
-
 
 

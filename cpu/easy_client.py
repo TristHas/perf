@@ -28,6 +28,11 @@ class LightClient(object):
         self.soc_ctrl.connect((ip,SOC_PORT_CTRL))
         self.log.info('[MAIN THREAD] Client connected to server')
 
+    def disconnect(self):
+        ### data processor should not be here
+        self.data_processor.stop()
+        self.soc_ctrl.close()
+
     def define_headers(self):
         head = {}
         head['process'] = PROC_CPU_DATA + PROC_MEM_DATA + TIMESTAMPS
@@ -65,7 +70,7 @@ class LightClient(object):
         self.log.debug('[MAIN THREAD] Asking server to stop recording')
         msg = MSG_SEP.join([STOP_RECORD, target, name])
         answer = send_data(self.soc_ctrl,msg)
-        self.log.info('[MAIN THREAD] Server asked to stop recording')
+        self.log.info('[MAIN THREAD] Server asked to stop recording {}'.format(name))
         if answer == SYNC:
             self.remove_target(target, name)
         else:
@@ -80,6 +85,7 @@ class LightClient(object):
             if status == FAIL:
                 self.log.error('[MAIN THREAD] Client tried to receive but server denied it')
             else:
+                print status
                 self.data_client.start()
                 self.log.info('[MAIN THREAD] Client is receiving')
             self.log.debug("[MAIN THREAD] DATA THREAD started")
@@ -115,6 +121,7 @@ class LightClient(object):
         self.stop_receive()
         self.soc_ctrl.close()
 
+
     def stop_all(self):
         self.stop_process()
         send_data(self.soc_ctrl, STOP_ALL)
@@ -140,7 +147,7 @@ if __name__ == '__main__':
         ip = adict['ip']
     else:
         sys.exit('Please specify an ip with --ip option')
-
+    print ip
     print 'Arguments parsed'
     client = LightClient(ip)
     while sys.stdin in select.select([sys.stdin], [], [], 1000)[0]:

@@ -14,7 +14,7 @@ LOG_DIR         = os.path.join(ROOT_DIR, 'log')
 ###
 ###     System Watch var
 ###
-SYS_MEM_DATA    = ["MemFree","Buffers","Cached","MemAvailable"]
+SYS_MEM_DATA    = ["MemFree","Buffers","Cached"]#,"MemAvailable"]
 SYS_CPU_DATA    = ["usr_time","nice_time","sys_time","io_time","irq_time","softirq_time","idle_time"]
 SYS_CPU_OTHER   = ["time", 'load']
 LOAD_AVG        = ["lavg_1","lavg_5","lavg_15"]

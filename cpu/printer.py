@@ -139,4 +139,4 @@ def print_dic(dico, ax, fig):
 ###
 
 if __name__ == '__main__':
-    print_file('/Users/d-fr-mac0002/Desktop/dialog/projects/perf/data/78_JULIEN/naoqi-service')
+    print_file('/tmp/bench_dialog/data/long_life_run 10.0.132.89/naoqi-service')

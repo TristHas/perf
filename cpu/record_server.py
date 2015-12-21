@@ -130,7 +130,6 @@ if __name__ == '__main__':
     server.setblocking(0)
     server.bind(('', SOC_PORT_CTRL))
     server.listen(5)
-
     inputs = [server]
     outputs = []
     message_queues = {}
