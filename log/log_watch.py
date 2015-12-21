@@ -2,6 +2,15 @@ import os
 import numpy as np
 from qi import Session, logging
 
+### FIXME
+# 1
+# record dir should be set by bench module
+# Outside of bench module should default to /tmp/log_watcher
+# 2
+
+
+
+
 ### Replace record directory to match bench_dialog's
 RECORD_DIRECTORY = "/tmp/bench_dialog/LogWatch"
 HEADERS = ('timestamp', 'log')

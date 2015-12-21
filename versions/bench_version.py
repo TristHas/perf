@@ -77,7 +77,7 @@ class VersionBench(object):
         self.files.append(naoqi_file)
 
     def get_profile_results(self):
-        # Should fsync to force file writing? that may be the cpu record problem we observe? Maybe already solved
+        #Should fsync to force file writing? that may be the cpu record problem we observe? Maybe already solved
         self.stop_store()
         self.naoqi.stop_activity_record()
         results = [
