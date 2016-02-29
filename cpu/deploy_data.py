@@ -33,7 +33,11 @@ def run_server(ip):
     env.user        = LOGIN
     env.password    = PWD
     env.host_string = ip
-    run('python {}/record_server.py < /dev/null > /dev/null 2>&1 &'.format(WORK_DIR), pty = False)
+    x = run('ps aux | grep record_server.py')
+    y = x.split('\n')
+    pid = y[0].split()[1]
+    if len(y) != 3:
+        run('python {}/record_server.py < /dev/null > /dev/null 2>&1 &'.format(WORK_DIR), pty = False)
     time.sleep(2)
 
 def kill_server(ip):

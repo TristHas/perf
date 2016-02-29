@@ -2,16 +2,22 @@
 # -*- coding: utf-8 -*-
 #from functionaltools import ssh_tools
 
-from ..log.log_watch import LogWatch
+from log_watch_dialog import LogWatchDialog
 from ..cpu.easy_client import LightClient
 import argparse, os, time, json, csv
 import numpy as np
 
+
+####
+####    ROOT DIRECTORY
+####
+
 class DialogBench(object):
-    def __init__(self, ip):
+    def __init__(self, ip, root_dir = '/tmp/bench_dialog'):
+        self.root_dir = root_dir
         self.ip = ip
-        self.client = LightClient(ip = self.ip)
-        self.log = LogWatch(ip)
+        self.client = LightClient(ip = self.ip)                             # ROOT DIRECTORY should be set here too
+        self.log = LogWatchDialog(ip = self.ip, root_dir = self.root_dir)   # ROOT directory should be said her
         self.record = False
         self.receive = False
         self.printer = False
@@ -19,14 +25,15 @@ class DialogBench(object):
         self.files = []
 
     def profile_compilation_performance(self, testID, visu = False):
-        self.log.start_watch_dialog()
+        self.files = []
+        self.log.start_watch()
         self.start_store(testID)
         self.testID = testID
         if visu:
             self.start_display()
 
     def get_compilation_performance_results(self):
-        self.log.stop_watch_dialog()
+        self.log.stop_watch()
         self.log.dump_logs(self.testID)
         self.stop_store()
         results = [ self.log.get_load_time(),
@@ -81,7 +88,6 @@ class DialogBench(object):
     def stop_store(self):
         if self.store:
             self.client.stop_store()
-            self.files = []
             self.store = False
             if not self._check_action():
                 self._stop_record()
@@ -157,7 +163,6 @@ class DialogBench(object):
         self.client.stop_record('process', 'naoqi-service')
 
     def _check_action(self):
-        print 'self.printer = ' + str(self.printer) + ' self.store = ' + str(self.store)
         return self.printer or self.store
 
     def get_data(self, target, field):
@@ -168,10 +173,9 @@ class DialogBench(object):
                         reader = csv.DictReader(csvfile)
                         result = []
                         for row in reader:
-                            print row
                             result.append(float(row[field]))
                         return result
-        except AttributeError:
+        except AttributeError as e:
             return None
 
 def parserArguments(parser):

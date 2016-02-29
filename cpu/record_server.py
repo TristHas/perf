@@ -6,10 +6,6 @@ import argparse, time, os, sys
 import socket, select
 import Queue
 
-
-
-
-
 if __name__ == '__main__':
     ####
     ####    ServerFunctions

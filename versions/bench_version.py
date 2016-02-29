@@ -15,7 +15,7 @@ class VersionBench(object):
         self.ip = ip
         self.client = LightClient(ip = self.ip)
         self.naoqi  = NaoqiWatcher(ip = self.ip)
-        #self.log = LogWatch(ip)
+        #self.log = LogWatchVersion(ip)
         self.record = False
         self.files = []
         self.set_robot_version()
@@ -37,7 +37,6 @@ class VersionBench(object):
             self.version = int(split_version[1])
             self.exact_version = version
         except Exception as e:
-            #### SHOULD find out what to do
             print 'Version number processing went wrong: '
             print e.message
             print 'Considering we run on 2.4'
@@ -45,11 +44,11 @@ class VersionBench(object):
 
     def start_store(self, dirname = 'bench_version'):
         if not self.record:
-            if self.version == 5:
+            if self.version == 5 :
                 self.client.start_record('system', 'system')
                 self.client.start_record('process', 'naoqi-service')
                 self.client.start_record('process', 'naoqi-bin')
-                self.client.start_record('process', 'client_gyro')
+                #self.client.start_record('process', 'client_gyro')
             else:
                 self.client.start_record('system', 'system')
             self.client.start_receive()
@@ -72,7 +71,7 @@ class VersionBench(object):
 
     def profile_long_life_run(self):
         #self.log.start_watch_general()
-        self.start_store('long_life_run {}'.format(self.ip))
+        self.start_store('long_life_run_2 {}'.format(self.ip))
         naoqi_file = self.naoqi.start_activity_record()
         self.files.append(naoqi_file)
 
@@ -83,7 +82,8 @@ class VersionBench(object):
         results = [
             self.get_naoqiservice_VmRSS_diff(),
             self.get_naoqiservice_VmSize_diff(),
-            self.get_cpu_lavg1_max(),
+            self.get_cpu_lavg15_max(),
+            self.get_cpu_lavg15_mean(),
             self.get_cpu_iotime_mean(),
             self.get_cpu_majflt_sum(),
             self.get_naoqiservice_stime_mean(),
@@ -146,9 +146,9 @@ class VersionBench(object):
             return None
         return result
 
-    def get_cpu_lavg1_max(self):
+    def get_cpu_lavg15_max(self):
         try:
-            data = self.get_data('system', 'lavg_1')
+            data = self.get_data('system', 'lavg_15')
             result = np.max(data)
         except Exception:
             return None
@@ -157,11 +157,18 @@ class VersionBench(object):
     def get_cpu_lavg1_mean(self):
         try:
             data = self.get_data('system', 'lavg_1')
-            result = np.mean(data)
+            result = np.max(data)
         except Exception:
             return None
         return result
 
+    def get_cpu_lavg15_mean(self):
+        try:
+            data = self.get_data('system', 'lavg_15')
+            result = np.mean(data)
+        except Exception:
+            return None
+        return result
 
     def get_cpu_majflt_sum(self):
         try:
